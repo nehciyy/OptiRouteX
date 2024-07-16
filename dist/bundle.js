@@ -82,6 +82,28 @@
     );
   }
 
+  function autoSuggestion(ui, query, coordinates) {
+    service.autosuggest(
+      {
+        // Search query
+        q: query,
+        // Center of the search context
+        at: coordinates,
+      },
+      (result) => {
+        let { position, title } = result.items[0];
+        // Assumption: ui is instantiated
+        // Create an InfoBubble at the returned location
+        ui.addBubble(
+          new H.ui.InfoBubble(position, {
+            content: title,
+          })
+        );
+      },
+      alert
+    );
+  }
+
   // import { H } from "@here/maps-api-for-javascript";
   // Initialize the platform object:
   const platform = new H.service.Platform({ apiKey: hereCredentials.apikey });
@@ -117,6 +139,7 @@
   // Call reverseGeocode with dynamic parameters
   const coordinates = "1.28668,103.853607,150"; // Replace with your desired coordinates
   reverseGeocode(ui, coordinates);
+  autoSuggestion(ui, "Merlion", coordinates);
   // export { router, geocoder };
 
 })();

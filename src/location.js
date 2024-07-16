@@ -28,3 +28,25 @@ export function reverseGeocode(ui, coordinates) {
     alert
   );
 }
+
+export function autoSuggestion(ui, query, coordinates) {
+  service.autosuggest(
+    {
+      // Search query
+      q: query,
+      // Center of the search context
+      at: coordinates,
+    },
+    (result) => {
+      let { position, title } = result.items[0];
+      // Assumption: ui is instantiated
+      // Create an InfoBubble at the returned location
+      ui.addBubble(
+        new H.ui.InfoBubble(position, {
+          content: title,
+        })
+      );
+    },
+    alert
+  );
+}
