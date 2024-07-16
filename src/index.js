@@ -1,6 +1,6 @@
 // import { H } from "@here/maps-api-for-javascript";
 import { center, hereCredentials } from "./config.js";
-
+import { addDistanceMeasurementTool } from "./distanceMeasure.js";
 // Initialize the platform object:
 const platform = new H.service.Platform({ apiKey: hereCredentials.apikey });
 
@@ -28,5 +28,7 @@ const provider = map.getBaseLayer().getProvider();
 
 window.addEventListener("resize", () => map.getViewPort().resize());
 // Create the default UI:
-const ui = H.ui.UI.createDefault(map, defaultLayers, `es-US`);
+const ui = H.ui.UI.createDefault(map, defaultLayers, `en-US`);
+// Add the distance measurement tool to the UI
+addDistanceMeasurementTool(ui);
 // export { router, geocoder };
