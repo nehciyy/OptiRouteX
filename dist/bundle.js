@@ -1,4 +1,4 @@
-var bundle = (function (exports) {
+(function () {
   'use strict';
 
   const center = {
@@ -36,15 +36,13 @@ var bundle = (function (exports) {
   new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
   map.getBaseLayer().getProvider();
 
-  //Initialize router and geocoder
-  const router = platform.getRoutingService();
-  const geocoder = platform.getGeocodingService();
+  // //Initialize router and geocoder
+  // const router = platform.getRoutingService();
+  // const geocoder = platform.getGeocodingService();
 
   window.addEventListener("resize", () => map.getViewPort().resize());
+  // Create the default UI:
+  H.ui.UI.createDefault(map, defaultLayers);
+  // export { router, geocoder };
 
-  exports.geocoder = geocoder;
-  exports.router = router;
-
-  return exports;
-
-})({});
+})();

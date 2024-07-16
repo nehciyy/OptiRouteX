@@ -22,10 +22,11 @@ const map = new H.Map(
 const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
 const provider = map.getBaseLayer().getProvider();
 
-//Initialize router and geocoder
-const router = platform.getRoutingService();
-const geocoder = platform.getGeocodingService();
+// //Initialize router and geocoder
+// const router = platform.getRoutingService();
+// const geocoder = platform.getGeocodingService();
 
 window.addEventListener("resize", () => map.getViewPort().resize());
-
-export { router, geocoder };
+// Create the default UI:
+const ui = H.ui.UI.createDefault(map, defaultLayers, `es-US`);
+// export { router, geocoder };
