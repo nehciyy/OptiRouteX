@@ -1,6 +1,7 @@
 // import { H } from "@here/maps-api-for-javascript";
 import { center, hereCredentials } from "./config.js";
 import { addDistanceMeasurementTool } from "./distanceMeasure.js";
+import { reverseGeocode } from "./location.js";
 // Initialize the platform object:
 const platform = new H.service.Platform({ apiKey: hereCredentials.apikey });
 
@@ -24,11 +25,15 @@ const provider = map.getBaseLayer().getProvider();
 
 // //Initialize router and geocoder
 // const router = platform.getRoutingService();
-// const geocoder = platform.getGeocodingService();
+//const geocoder = platform.getGeocodingService();
 
 window.addEventListener("resize", () => map.getViewPort().resize());
 // Create the default UI:
 const ui = H.ui.UI.createDefault(map, defaultLayers, `en-US`);
 // Add the distance measurement tool to the UI
 addDistanceMeasurementTool(ui);
+
+// Call reverseGeocode with dynamic parameters
+const coordinates = "1.28668,103.853607,150"; // Replace with your desired coordinates
+reverseGeocode(ui, coordinates);
 // export { router, geocoder };

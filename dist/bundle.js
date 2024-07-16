@@ -52,6 +52,36 @@
     ui.setUnitSystem(H.ui.UnitSystem.METRIC);
   }
 
+  // Instantiate a map and platform object:
+  const platform$1 = new H.service.Platform({ apiKey: hereCredentials.apikey });
+
+  // Get an instance of the search service:
+  var service = platform$1.getSearchService();
+
+  // Call the reverse geocode method with the geocoding parameters,
+  // the callback and an error callback function (called if a
+  // communication error occurs):
+  function reverseGeocode(ui, coordinates) {
+    service.reverseGeocode(
+      {
+        at: coordinates,
+      },
+      (result) => {
+        result.items.forEach((item) => {
+          // Assumption: ui is instantiated
+          // Create an InfoBubble at the returned location with
+          // the address as its contents:
+          ui.addBubble(
+            new H.ui.InfoBubble(item.position, {
+              content: item.address.label,
+            })
+          );
+        });
+      },
+      alert
+    );
+  }
+
   // import { H } from "@here/maps-api-for-javascript";
   // Initialize the platform object:
   const platform = new H.service.Platform({ apiKey: hereCredentials.apikey });
@@ -76,13 +106,17 @@
 
   // //Initialize router and geocoder
   // const router = platform.getRoutingService();
-  // const geocoder = platform.getGeocodingService();
+  //const geocoder = platform.getGeocodingService();
 
   window.addEventListener("resize", () => map.getViewPort().resize());
   // Create the default UI:
   const ui = H.ui.UI.createDefault(map, defaultLayers, `en-US`);
   // Add the distance measurement tool to the UI
   addDistanceMeasurementTool(ui);
+
+  // Call reverseGeocode with dynamic parameters
+  const coordinates = "1.28668,103.853607,150"; // Replace with your desired coordinates
+  reverseGeocode(ui, coordinates);
   // export { router, geocoder };
 
 })();
