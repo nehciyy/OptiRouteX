@@ -13,6 +13,8 @@
     apikey: "G1OcoyO4L7xsmvpkua0a1KxPS4FvaqgwBpG_2cyXlXc",
   };
 
+  const platform$2 = new H.service.Platform({ apiKey: hereCredentials.apikey });
+
   // Create a template for marker icons by using custom SVG style
   function createMarkerIcon(color) {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32">
@@ -52,57 +54,72 @@
     ui.setUnitSystem(H.ui.UnitSystem.METRIC);
   }
 
+  function routeCal(map, origin, destination) {
+    // Create the parameters for the routing request:
+    const routingParameters = {
+      routingMode: "fast",
+      transportMode: "car",
+      // The start point of the route:
+      origin: `${origin.lat},${origin.lng}`,
+      // The end point of the route:
+      destination: `${destination.lat},${destination.lng}`,
+      // Include the route shape in the response
+      return: "polyline",
+    };
+
+    // Define a callback function to process the routing response:
+    const onResult = function (result) {
+      // Ensure that at least one route was found
+      if (result.routes.length) {
+        const lineStrings = [];
+        result.routes[0].sections.forEach((section) => {
+          // Create a linestring to use as a point source for the route line
+          lineStrings.push(
+            H.geo.LineString.fromFlexiblePolyline(section.polyline)
+          );
+        });
+
+        // Create an instance of H.geo.MultiLineString
+        const multiLineString = new H.geo.MultiLineString(lineStrings);
+
+        // Create a polyline to display the route:
+        const routeLine = new H.map.Polyline(multiLineString, {
+          style: {
+            strokeColor: "blue",
+            lineWidth: 3,
+          },
+        });
+
+        // Create a marker for the start point:
+        const startMarker = new H.map.Marker(origin);
+        // Create a marker for the end point:
+        const endMarker = new H.map.Marker(destination);
+
+        // Create a H.map.Group to hold all the map objects and enable us to obtain
+        // the bounding box that contains all its objects within
+        const group = new H.map.Group();
+        group.addObjects([routeLine, startMarker, endMarker]);
+        // Add the group to the map
+        map.addObject(group);
+      }
+    };
+
+    // Get an instance of the routing service version 8:
+    const router = platform$2.getRoutingService(null, 8);
+
+    // Call the calculateRoute() method with the routing parameters,
+    // the callback, and an error callback function (called if a
+    // communication error occurs):
+    router.calculateRoute(routingParameters, onResult, function (error) {
+      alert(error.message);
+    });
+  }
+
   // Instantiate a map and platform object:
   const platform$1 = new H.service.Platform({ apiKey: hereCredentials.apikey });
 
   // Get an instance of the search service:
-  var service = platform$1.getSearchService();
-
-  // Call the reverse geocode method with the geocoding parameters,
-  // the callback and an error callback function (called if a
-  // communication error occurs):
-  function reverseGeocode(ui, coordinates) {
-    service.reverseGeocode(
-      {
-        at: coordinates,
-      },
-      (result) => {
-        result.items.forEach((item) => {
-          // Assumption: ui is instantiated
-          // Create an InfoBubble at the returned location with
-          // the address as its contents:
-          ui.addBubble(
-            new H.ui.InfoBubble(item.position, {
-              content: item.address.label,
-            })
-          );
-        });
-      },
-      alert
-    );
-  }
-
-  function autoSuggestion(ui, query, coordinates) {
-    service.autosuggest(
-      {
-        // Search query
-        q: query,
-        // Center of the search context
-        at: coordinates,
-      },
-      (result) => {
-        let { position, title } = result.items[0];
-        // Assumption: ui is instantiated
-        // Create an InfoBubble at the returned location
-        ui.addBubble(
-          new H.ui.InfoBubble(position, {
-            content: title,
-          })
-        );
-      },
-      alert
-    );
-  }
+  platform$1.getSearchService();
 
   // import { H } from "@here/maps-api-for-javascript";
   // Initialize the platform object:
@@ -135,11 +152,13 @@
   const ui = H.ui.UI.createDefault(map, defaultLayers, `en-US`);
   // Add the distance measurement tool to the UI
   addDistanceMeasurementTool(ui);
+  //reverseGeocode(ui, coordinates);
+  //autoSuggestion(ui, "Merlion", coordinates);
 
-  // Call reverseGeocode with dynamic parameters
-  const coordinates = "1.28668,103.853607,150"; // Replace with your desired coordinates
-  reverseGeocode(ui, coordinates);
-  autoSuggestion(ui, "Merlion", coordinates);
+  const origin = { lat: 1.301114, lng: 103.838872 };
+  const destination = { lat: 1.28437, lng: 103.8599 };
+
+  routeCal(map, origin, destination);
   // export { router, geocoder };
 
 })();

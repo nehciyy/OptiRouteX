@@ -1,6 +1,6 @@
 // import { H } from "@here/maps-api-for-javascript";
 import { center, hereCredentials } from "./config.js";
-import { addDistanceMeasurementTool } from "./distanceMeasure.js";
+import { addDistanceMeasurementTool, routeCal } from "./distanceMeasure.js";
 import { reverseGeocode, autoSuggestion } from "./location.js";
 // Initialize the platform object:
 const platform = new H.service.Platform({ apiKey: hereCredentials.apikey });
@@ -35,6 +35,11 @@ addDistanceMeasurementTool(ui);
 
 // Call reverseGeocode with dynamic parameters
 const coordinates = "1.28668,103.853607,150"; // Replace with your desired coordinates
-reverseGeocode(ui, coordinates);
-autoSuggestion(ui, "Merlion", coordinates);
+//reverseGeocode(ui, coordinates);
+//autoSuggestion(ui, "Merlion", coordinates);
+
+const origin = { lat: 1.301114, lng: 103.838872 };
+const destination = { lat: 1.28437, lng: 103.8599 };
+
+routeCal(map, origin, destination);
 // export { router, geocoder };
