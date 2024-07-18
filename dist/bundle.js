@@ -54,63 +54,78 @@
     ui.setUnitSystem(H.ui.UnitSystem.METRIC);
   }
 
-  function routeCal(map, origin, destination) {
-    // Create the parameters for the routing request:
+  function multiRouteCal(map, waypoints, origin, destination) {
+    const waypointMarkers = [];
+
+    // Define the routing parameters
     const routingParameters = {
       routingMode: "fast",
-      transportMode: "car",
-      // The start point of the route:
+      transportMode: "pedestrian",
       origin: `${origin.lat},${origin.lng}`,
-      // The end point of the route:
       destination: `${destination.lat},${destination.lng}`,
-      // Include the route shape in the response
       return: "polyline",
+      // Add a via parameter to the query for each coordinate pair:
+      via: new H.service.Url.MultiValueQueryParameter(
+        waypoints.map((wp) => `${wp.lat},${wp.lng}`)
+      ),
     };
-
-    // Define a callback function to process the routing response:
+    //Callback function to process the routing response
     const onResult = function (result) {
-      // Ensure that at least one route was found
-      if (result.routes.length) {
-        const lineStrings = [];
-        result.routes[0].sections.forEach((section) => {
-          // Create a linestring to use as a point source for the route line
-          lineStrings.push(
-            H.geo.LineString.fromFlexiblePolyline(section.polyline)
-          );
+      //Check if a route was found
+      if (!result.routes.length) {
+        console.error("No routes found");
+        return;
+      }
+
+      // Create waypoint markers:
+      waypoints.forEach((waypoint) => {
+        const waypointMarker = new H.map.Marker({
+          lat: waypoint.lat,
+          lng: waypoint.lng,
         });
+        waypointMarkers.push(waypointMarker);
+      });
 
-        // Create an instance of H.geo.MultiLineString
-        const multiLineString = new H.geo.MultiLineString(lineStrings);
+      // Collect line strings for each section of the route
+      const lineStrings = [];
+      result.routes[0].sections.forEach((section) => {
+        lineStrings.push(H.geo.LineString.fromFlexiblePolyline(section.polyline));
+      });
 
-        // Create a polyline to display the route:
-        const routeLine = new H.map.Polyline(multiLineString, {
-          style: {
-            strokeColor: "blue",
-            lineWidth: 3,
-          },
-        });
+      //Create multi-line string from the line strings
+      const multiLineString = new H.geo.MultiLineString(lineStrings);
 
-        // Create a marker for the start point:
-        const startMarker = new H.map.Marker(origin);
-        // Create a marker for the end point:
-        const endMarker = new H.map.Marker(destination);
+      //Create a polyline to display the route
+      const routeLine = new H.map.Polyline(multiLineString, {
+        style: {
+          strokeColor: "blue",
+          lineWidth: 3,
+        },
+      });
 
-        // Create a H.map.Group to hold all the map objects and enable us to obtain
-        // the bounding box that contains all its objects within
-        const group = new H.map.Group();
-        group.addObjects([routeLine, startMarker, endMarker]);
-        // Add the group to the map
+      //Create markers for the start and end points
+      const startMarker = new H.map.Marker(origin);
+      const endMarker = new H.map.Marker(destination);
+
+      //Create a group that holds the route and waypoint markers
+      const group = new H.map.Group();
+      group.addObjects([routeLine, startMarker, endMarker, ...waypointMarkers]);
+
+      //Add the group to the map if the map object is defined and valid
+      if (typeof map !== "undefined" && map instanceof H.Map) {
         map.addObject(group);
+      } else {
+        console.error("Map object is not defined or not an instance of H.Map");
       }
     };
 
-    // Get an instance of the routing service version 8:
+    //Get an instance of the routing service version 8
     const router = platform$2.getRoutingService(null, 8);
 
-    // Call the calculateRoute() method with the routing parameters,
-    // the callback, and an error callback function (called if a
-    // communication error occurs):
+    //Call the calculateRoute() method with the routing parameters,
+    // the callback, and an error callback function
     router.calculateRoute(routingParameters, onResult, function (error) {
+      console.error(error.message);
       alert(error.message);
     });
   }
@@ -158,7 +173,16 @@
   const origin = { lat: 1.301114, lng: 103.838872 };
   const destination = { lat: 1.28437, lng: 103.8599 };
 
-  routeCal(map, origin, destination);
+  //routeCal(map, origin, destination);
+
+  const waypoints = [
+    { lat: 1.28668, lng: 103.853607 }, //Merlion
+    { lat: 1.301114, lng: 103.838872 }, //313 Somerset
+    { lat: 1.28437, lng: 103.8599 }, //Marina Bay Sands
+    { lat: 1.281517, lng: 103.865774 }, //Gardens by the Bay
+    { lat: 1.289299, lng: 103.863137 }, //Singapore Flyer
+  ];
+  multiRouteCal(map, waypoints, origin, destination);
   // export { router, geocoder };
 
 })();

@@ -101,3 +101,79 @@ export function routeCal(map, origin, destination) {
     alert(error.message);
   });
 }
+
+export function multiRouteCal(map, waypoints, origin, destination) {
+  const waypointMarkers = [];
+
+  // Define the routing parameters
+  const routingParameters = {
+    routingMode: "fast",
+    transportMode: "pedestrian",
+    origin: `${origin.lat},${origin.lng}`,
+    destination: `${destination.lat},${destination.lng}`,
+    return: "polyline",
+    // Add a via parameter to the query for each coordinate pair:
+    via: new H.service.Url.MultiValueQueryParameter(
+      waypoints.map((wp) => `${wp.lat},${wp.lng}`)
+    ),
+  };
+  //Callback function to process the routing response
+  const onResult = function (result) {
+    //Check if a route was found
+    if (!result.routes.length) {
+      console.error("No routes found");
+      return;
+    }
+
+    // Create waypoint markers:
+    waypoints.forEach((waypoint) => {
+      const waypointMarker = new H.map.Marker({
+        lat: waypoint.lat,
+        lng: waypoint.lng,
+      });
+      waypointMarkers.push(waypointMarker);
+    });
+
+    // Collect line strings for each section of the route
+    const lineStrings = [];
+    result.routes[0].sections.forEach((section) => {
+      lineStrings.push(H.geo.LineString.fromFlexiblePolyline(section.polyline));
+    });
+
+    //Create multi-line string from the line strings
+    const multiLineString = new H.geo.MultiLineString(lineStrings);
+
+    //Create a polyline to display the route
+    const routeLine = new H.map.Polyline(multiLineString, {
+      style: {
+        strokeColor: "blue",
+        lineWidth: 3,
+      },
+    });
+
+    //Create markers for the start and end points
+    const startMarker = new H.map.Marker(origin);
+    const endMarker = new H.map.Marker(destination);
+
+    //Create a group that holds the route and waypoint markers
+    const group = new H.map.Group();
+    group.addObjects([routeLine, startMarker, endMarker, ...waypointMarkers]);
+
+    //Add the group to the map if the map object is defined and valid
+    if (typeof map !== "undefined" && map instanceof H.Map) {
+      map.addObject(group);
+    } else {
+      console.error("Map object is not defined or not an instance of H.Map");
+    }
+  };
+
+  //Get an instance of the routing service version 8
+  const router = platform.getRoutingService(null, 8);
+
+  //Call the calculateRoute() method with the routing parameters,
+  // the callback, and an error callback function
+  router.calculateRoute(routingParameters, onResult, function (error) {
+    console.error(error.message);
+    alert(error.message);
+  });
+}
