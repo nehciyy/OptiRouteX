@@ -4,6 +4,7 @@ import {
   addDistanceMeasurementTool,
   routeCal,
   multiRouteCal,
+  draggableDirections,
 } from "./distanceMeasure.js";
 import { reverseGeocode, autoSuggestion } from "./location.js";
 // Initialize the platform object:
@@ -54,5 +55,7 @@ const waypoints = [
   { lat: 1.281517, lng: 103.865774 }, //Gardens by the Bay
   { lat: 1.289299, lng: 103.863137 }, //Singapore Flyer
 ];
-multiRouteCal(map, waypoints, origin, destination);
+//multiRouteCal(map, waypoints, origin, destination);
 // export { router, geocoder };
+
+draggableDirections(map, origin, destination);

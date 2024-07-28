@@ -54,80 +54,227 @@
     ui.setUnitSystem(H.ui.UnitSystem.METRIC);
   }
 
-  function multiRouteCal(map, waypoints, origin, destination) {
-    const waypointMarkers = [];
-
-    // Define the routing parameters
-    const routingParameters = {
-      routingMode: "fast",
-      transportMode: "pedestrian",
-      origin: `${origin.lat},${origin.lng}`,
-      destination: `${destination.lat},${destination.lng}`,
-      return: "polyline",
-      // Add a via parameter to the query for each coordinate pair:
-      via: new H.service.Url.MultiValueQueryParameter(
-        waypoints.map((wp) => `${wp.lat},${wp.lng}`)
-      ),
-    };
-    //Callback function to process the routing response
-    const onResult = function (result) {
-      //Check if a route was found
-      if (!result.routes.length) {
-        console.error("No routes found");
-        return;
-      }
-
-      // Create waypoint markers:
-      waypoints.forEach((waypoint) => {
-        const waypointMarker = new H.map.Marker({
-          lat: waypoint.lat,
-          lng: waypoint.lng,
-        });
-        waypointMarkers.push(waypointMarker);
-      });
-
-      // Collect line strings for each section of the route
-      const lineStrings = [];
-      result.routes[0].sections.forEach((section) => {
-        lineStrings.push(H.geo.LineString.fromFlexiblePolyline(section.polyline));
-      });
-
-      //Create multi-line string from the line strings
-      const multiLineString = new H.geo.MultiLineString(lineStrings);
-
-      //Create a polyline to display the route
-      const routeLine = new H.map.Polyline(multiLineString, {
-        style: {
-          strokeColor: "blue",
-          lineWidth: 3,
+  function draggableDirections(map, origin, destination) {
+    /**
+     * Returns an instance of H.map.Icon to style the markers
+     * @param {number|string} id An identifier that will be displayed as marker label
+     *
+     * @return {H.map.Icon}
+     */
+    function getMarkerIcon(id) {
+      const svgCircle = `<svg width="30" height="30" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                        <g id="marker">
+                          <circle cx="15" cy="15" r="10" fill="#0099D8" stroke="#0099D8" stroke-width="4" />
+                          <text x="50%" y="50%" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="12px" dy=".3em">${id}</text>
+                        </g></svg>`;
+      return new H.map.Icon(svgCircle, {
+        anchor: {
+          x: 10,
+          y: 10,
         },
       });
+    }
 
-      //Create markers for the start and end points
-      const startMarker = new H.map.Marker(origin);
-      const endMarker = new H.map.Marker(destination);
+    /**
+     * Create an instance of H.map.Marker and add it to the map
+     *
+     * @param {object} position  An object with 'lat' and 'lng' properties defining the position of the marker
+     * @param {string|number} id An identifier that will be displayed as marker label
+     * @return {H.map.Marker} The instance of the marker that was created
+     */
+    function addMarker(position, id) {
+      const marker = new H.map.Marker(position, {
+        data: {
+          id,
+        },
+        icon: getMarkerIcon(id),
+        // Enable smooth dragging
+        volatility: true,
+      });
+      // Enable draggable markers
+      marker.draggable = true;
 
-      //Create a group that holds the route and waypoint markers
-      const group = new H.map.Group();
-      group.addObjects([routeLine, startMarker, endMarker, ...waypointMarkers]);
+      map.addObject(marker);
+      return marker;
+    }
 
-      //Add the group to the map if the map object is defined and valid
-      if (typeof map !== "undefined" && map instanceof H.Map) {
-        map.addObject(group);
-      } else {
-        console.error("Map object is not defined or not an instance of H.Map");
-      }
+    addMarker(origin, "A");
+    addMarker(destination, "B");
+    // This array holds instances of H.map.Marker representing the route waypoints
+    const waypoints = [];
+
+    const routingParams = {
+      origin: `${origin.lat},${origin.lng}`,
+      destination: `${destination.lat},${destination.lng}`,
+      // defines multiple waypoints
+      via: new H.service.Url.MultiValueQueryParameter(waypoints),
+      transportMode: "car",
+      return: "polyline",
     };
 
-    //Get an instance of the routing service version 8
-    const router = platform$2.getRoutingService(null, 8);
+    function updateRoute() {
+      // Add waypoints the route must pass through
+      routingParams.via = new H.service.Url.MultiValueQueryParameter(
+        waypoints.map((wp) => `${wp.getGeometry().lat},${wp.getGeometry().lng}`)
+      );
 
-    //Call the calculateRoute() method with the routing parameters,
-    // the callback, and an error callback function
-    router.calculateRoute(routingParameters, onResult, function (error) {
-      console.error(error.message);
-      alert(error.message);
+      router.calculateRoute(routingParams, routeResponseHandler, console.error);
+    }
+
+    const router = platform$2.getRoutingService(null, 8);
+    let routePolyline;
+    /**
+     * Handler for the H.service.RoutingService8#calculateRoute call
+     *
+     * @param {object} response The response object returned by calculateRoute method
+     */
+    function routeResponseHandler(response) {
+      const sections = response.routes[0].sections;
+      const lineStrings = [];
+      sections.forEach((section) => {
+        // convert Flexible Polyline encoded string to geometry
+        lineStrings.push(H.geo.LineString.fromFlexiblePolyline(section.polyline));
+      });
+      const multiLineString = new H.geo.MultiLineString(lineStrings);
+      multiLineString.getBoundingBox();
+
+      // Create the polyline for the route
+      if (routePolyline) {
+        // If the routePolyline we just set the new geometry
+        routePolyline.setGeometry(multiLineString);
+      } else {
+        // routePolyline is not yet defined, instantiate a new H.map.Polyline
+        routePolyline = new H.map.Polyline(multiLineString, {
+          style: {
+            lineWidth: 5,
+          },
+        });
+      }
+
+      // Add the polyline to the map
+      map.addObject(routePolyline);
+    }
+
+    /**
+     * Listen to the dragstart and store the relevant position information of the marker
+     */
+    map.addEventListener(
+      "dragstart",
+      function (ev) {
+        const target = ev.target;
+        const pointer = ev.currentPointer;
+        if (target instanceof H.map.Marker) {
+          // Disable the default draggability of the underlying map
+          behavior.disable(H.mapevents.Behavior.Feature.PANNING);
+
+          var targetPosition = map.geoToScreen(target.getGeometry());
+          // Calculate the offset between mouse and target's position
+          // when starting to drag a marker object
+          target["offset"] = new H.math.Point(
+            pointer.viewportX - targetPosition.x,
+            pointer.viewportY - targetPosition.y
+          );
+        }
+      },
+      false
+    );
+
+    /**
+     * Listen to the drag event and move the position of the marker as necessary
+     */
+    map.addEventListener(
+      "drag",
+      function (ev) {
+        const target = ev.target;
+        const pointer = ev.currentPointer;
+        if (target instanceof H.map.Marker) {
+          target.setGeometry(
+            map.screenToGeo(
+              pointer.viewportX - target["offset"].x,
+              pointer.viewportY - target["offset"].y
+            )
+          );
+        }
+      },
+      false
+    );
+    /**
+     * Listen to the dragend and update the route
+     */
+    map.addEventListener(
+      "dragend",
+      function (ev) {
+        const target = ev.target;
+        if (target instanceof H.map.Marker) {
+          // re-enable the default draggability of the underlying map
+          // when dragging has completed
+          behavior.enable(H.mapevents.Behavior.Feature.PANNING);
+          const coords = target.getGeometry();
+          const markerId = target.getData().id;
+
+          // Update the routing params `origin` and `destination` properties
+          // in case we dragging either the origin or the destination marker
+          if (markerId === "A") {
+            routingParams.origin = `${coords.lat},${coords.lng}`;
+          } else if (markerId === "B") {
+            routingParams.destination = `${coords.lat},${coords.lng}`;
+          }
+
+          updateRoute();
+        }
+      },
+      false
+    );
+    /**
+     * Listen to the tap event to add a new waypoint
+     */
+    map.addEventListener("tap", function (ev) {
+      const target = ev.target;
+      const pointer = ev.currentPointer;
+      const coords = map.screenToGeo(pointer.viewportX, pointer.viewportY);
+
+      if (!(target instanceof H.map.Marker)) {
+        const marker = addMarker(coords, waypoints.length + 1);
+        waypoints.push(marker);
+        updateRoute();
+      }
     });
+    /**
+     * Listen to the dbltap event to remove a waypoint
+     */
+    map.addEventListener("dbltap", function (ev) {
+      const target = ev.target;
+
+      if (target instanceof H.map.Marker) {
+        // Prevent the origin or destination markers from being removed
+        if (["origin", "destination"].indexOf(target.getData().id) !== -1) {
+          return;
+        }
+
+        const markerIdx = waypoints.indexOf(target);
+        if (markerIdx !== -1) {
+          // Remove the marker from the array of way points
+          waypoints.splice(markerIdx, 1);
+          // Iterate over the remaining waypoints and update their data
+          waypoints.forEach((marker, idx) => {
+            const id = idx + 1;
+            // Update marker's id
+            marker.setData({
+              id,
+            });
+            // Update marker's icon to show its new id
+            marker.setIcon(getMarkerIcon(id));
+          });
+        }
+
+        // Remove the marker from the map
+        map.removeObject(target);
+
+        updateRoute();
+      }
+    });
+
+    behavior.disable(H.mapevents.Behavior.Feature.DBL_TAP_ZOOM);
   }
 
   // Instantiate a map and platform object:
@@ -172,17 +319,9 @@
 
   const origin = { lat: 1.301114, lng: 103.838872 };
   const destination = { lat: 1.28437, lng: 103.8599 };
-
-  //routeCal(map, origin, destination);
-
-  const waypoints = [
-    { lat: 1.28668, lng: 103.853607 }, //Merlion
-    { lat: 1.301114, lng: 103.838872 }, //313 Somerset
-    { lat: 1.28437, lng: 103.8599 }, //Marina Bay Sands
-    { lat: 1.281517, lng: 103.865774 }, //Gardens by the Bay
-    { lat: 1.289299, lng: 103.863137 }, //Singapore Flyer
-  ];
-  multiRouteCal(map, waypoints, origin, destination);
+  //multiRouteCal(map, waypoints, origin, destination);
   // export { router, geocoder };
+
+  draggableDirections(map, origin, destination);
 
 })();
