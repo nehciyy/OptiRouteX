@@ -1,11 +1,17 @@
-import { center, hereCredentials } from "./config.js";
-import { router, geocoder } from "./index.js";
+import { hereCredentials } from "./config";
 
-// // Provided that map and platform objects are instantiated.
-// // Create a traffic service and a corresponding provider.
-// var service = platform.getTrafficService();
-// var provider = new H.service.traffic.flow.Provider(service);
+const platform = new H.service.Platform({ apiKey: hereCredentials.apikey });
+// Obtain the default map types from the platform object
+const defaultLayers = platform.createDefaultLayers();
 
-// // Create a tile layer that can be added to the map
-// var layer = new H.map.layer.TileLayer(provider);
-// map.addLayer(layer);
+// Function to update traffic layer
+export function updateTrafficLayer() {
+  // Get the provider instance from the layer
+  const provider = defaultLayers.vector.traffic.map.getProvider();
+  // Invalidate provider's data and force reload
+  provider.reload(true);
+}
+
+// Refresh traffic layer every 1 minute (60 seconds)
+const refreshInterval = 60 * 1000; // 60 seconds in milliseconds
+setInterval(updateTrafficLayer, refreshInterval);
