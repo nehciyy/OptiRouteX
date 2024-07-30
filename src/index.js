@@ -21,10 +21,10 @@ const coordinates = "1.28668,103.853607,150"; // Replace with your desired coord
 //reverseGeocode(ui, coordinates);
 //autoSuggestion(ui, "Merlion", coordinates);
 
-const origin = { lat: 1.301114, lng: 103.838872 };
-const destination = { lat: 1.28437, lng: 103.8599 };
+const origin = { lat: 1.292982, lng: 103.857003 }; //Suntec City
+const destination = { lat: 1.300639, lng: 103.854837 }; // Bugis Junction
 
-//routeCal(map, origin, destination);
+//routeCal(origin, destination);
 
 const waypoints = [
   { lat: 1.28668, lng: 103.853607 }, //Merlion
@@ -33,8 +33,8 @@ const waypoints = [
   { lat: 1.281517, lng: 103.865774 }, //Gardens by the Bay
   { lat: 1.289299, lng: 103.863137 }, //Singapore Flyer
 ];
-//multiRouteCal(map, waypoints, origin, destination);
+multiRouteCal(waypoints, origin, destination);
 // export { router, geocoder };
 
-draggableDirections(origin, destination);
-updateTrafficLayer();
+//draggableDirections(origin, destination);
+//updateTrafficLayer();

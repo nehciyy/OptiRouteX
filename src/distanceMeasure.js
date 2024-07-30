@@ -107,11 +107,7 @@ export function routeCal(origin, destination) {
 }
 
 export function multiRouteCal(waypoints, origin, destination) {
-  const {
-    mapInstance: map,
-    platformInstance: platform,
-    behaviorInstance: behavior,
-  } = getMap();
+  const { mapInstance: map, platformInstance: platform } = getMap();
   const waypointMarkers = [];
 
   // Define the routing parameters
@@ -126,22 +122,44 @@ export function multiRouteCal(waypoints, origin, destination) {
       waypoints.map((wp) => `${wp.lat},${wp.lng}`)
     ),
   };
-  //Callback function to process the routing response
+
+  // Function to create a custom marker icon with a number
+  function createMarkerIcon(color, number) {
+    return new H.map.Icon(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
+        <circle cx="15" cy="15" r="10" fill="${color}" stroke="white" stroke-width="2"/>
+        <text x="15" y="20" font-size="12" font-family="Arial" fill="white" text-anchor="middle">${number}</text>
+      </svg>`
+    );
+  }
+
+  // Create icons for origin and destination with numbers
+  const originIcon = createMarkerIcon("blue", "Start");
+  const destinationIcon = createMarkerIcon("red", "End");
+
+  // Callback function to process the routing response
   const onResult = function (result) {
-    //Check if a route was found
+    // Check if a route was found
     if (!result.routes.length) {
       console.error("No routes found");
       return;
     }
 
-    // Create waypoint markers:
-    waypoints.forEach((waypoint) => {
-      const waypointMarker = new H.map.Marker({
-        lat: waypoint.lat,
-        lng: waypoint.lng,
-      });
+    // Create waypoint markers with numbers
+    waypoints.forEach((waypoint, index) => {
+      const waypointMarker = new H.map.Marker(
+        { lat: waypoint.lat, lng: waypoint.lng },
+        { icon: createMarkerIcon("gray", index + 1) }
+      );
       waypointMarkers.push(waypointMarker);
     });
+
+    // Add markers for origin and destination with custom icons
+    const originMarker = new H.map.Marker(origin, { icon: originIcon });
+    const destinationMarker = new H.map.Marker(destination, {
+      icon: destinationIcon,
+    });
+    waypointMarkers.push(originMarker, destinationMarker);
 
     // Collect line strings for each section of the route
     const lineStrings = [];
@@ -149,10 +167,41 @@ export function multiRouteCal(waypoints, origin, destination) {
       lineStrings.push(H.geo.LineString.fromFlexiblePolyline(section.polyline));
     });
 
-    //Create multi-line string from the line strings
+    // Create multi-line string from the line strings
     const multiLineString = new H.geo.MultiLineString(lineStrings);
 
-    //Create a polyline to display the route
+    // Calculate the distance between each waypoint
+    let totalDistance = 0;
+    const distances = [];
+
+    // Include all points (origin, waypoints, and destination)
+    const allPoints = [origin, ...waypoints, destination];
+
+    // Calculate distance between consecutive points
+    for (let i = 0; i < allPoints.length - 1; i++) {
+      const point1 = new H.geo.Point(allPoints[i].lat, allPoints[i].lng);
+      const point2 = new H.geo.Point(
+        allPoints[i + 1].lat,
+        allPoints[i + 1].lng
+      );
+      const distance = point1.distance(point2);
+      totalDistance += distance;
+      distances.push(distance);
+    }
+
+    // Log the total distance
+    console.log(`Total distance: ${totalDistance} meters`);
+
+    // Log distances between each pair of consecutive points
+    distances.forEach((distance, index) => {
+      console.log(
+        `Distance from point ${index + 1} to point ${
+          index + 2
+        }: ${distance} meters`
+      );
+    });
+
+    // Create a polyline to display the route
     const routeLine = new H.map.Polyline(multiLineString, {
       style: {
         strokeColor: "blue",
@@ -160,15 +209,11 @@ export function multiRouteCal(waypoints, origin, destination) {
       },
     });
 
-    //Create markers for the start and end points
-    const startMarker = new H.map.Marker(origin);
-    const endMarker = new H.map.Marker(destination);
-
-    //Create a group that holds the route and waypoint markers
+    // Create a group that holds the route and waypoint markers
     const group = new H.map.Group();
-    group.addObjects([routeLine, startMarker, endMarker, ...waypointMarkers]);
+    group.addObjects([routeLine, ...waypointMarkers]);
 
-    //Add the group to the map if the map object is defined and valid
+    // Add the group to the map if the map object is defined and valid
     if (typeof map !== "undefined" && map instanceof H.Map) {
       map.addObject(group);
     } else {
@@ -176,10 +221,10 @@ export function multiRouteCal(waypoints, origin, destination) {
     }
   };
 
-  //Get an instance of the routing service version 8
+  // Get an instance of the routing service version 8
   const router = platform.getRoutingService(null, 8);
 
-  //Call the calculateRoute() method with the routing parameters,
+  // Call the calculateRoute() method with the routing parameters,
   // the callback, and an error callback function
   router.calculateRoute(routingParameters, onResult, function (error) {
     console.error(error.message);
