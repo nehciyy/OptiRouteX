@@ -1,19 +1,55 @@
 (function () {
   'use strict';
 
-  const center = {
-    lat: 1.3521,
-    lng: 103.8198,
-    text: "Singapore",
-  };
-
   const hereCredentials = {
     id: "HERE-580478a9-edc0-4a38-8842-1393f0e46820",
     code: "BYa7o5f155QWUHkSmjWA",
     apikey: "G1OcoyO4L7xsmvpkua0a1KxPS4FvaqgwBpG_2cyXlXc",
   };
 
-  const platform$2 = new H.service.Platform({ apiKey: hereCredentials.apikey });
+  let mapInstance = null;
+  let platformInstance = null;
+  let behaviorInstance = null;
+  let uiInstance = null;
+
+  function initializeMap() {
+    if (!mapInstance) {
+      platformInstance = new H.service.Platform({
+        apiKey: hereCredentials.apikey,
+      });
+      const defaultLayers = platformInstance.createDefaultLayers();
+
+      mapInstance = new H.Map(
+        document.getElementById("map"),
+        defaultLayers.vector.normal.map,
+        {
+          zoom: 12,
+          center: { lat: 1.301114, lng: 103.838872 }, // Default center
+          pixelRatio: window.devicePixelRatio || 1,
+        }
+      );
+
+      // Enable the event system on the map instance:
+      const mapEvents = new H.mapevents.MapEvents(mapInstance);
+      behaviorInstance = new H.mapevents.Behavior(mapEvents);
+      behaviorInstance.disable(H.mapevents.Behavior.Feature.DBL_TAP_ZOOM);
+
+      // Create the default UI:
+      uiInstance = H.ui.UI.createDefault(mapInstance, defaultLayers, "en-US");
+
+      window.addEventListener("resize", () => mapInstance.getViewPort().resize());
+    }
+    return { mapInstance, platformInstance, behaviorInstance, uiInstance };
+  }
+
+  function getMap() {
+    if (!mapInstance) {
+      throw new Error(
+        "Map has not been initialized. Call initializeMap() first."
+      );
+    }
+    return { mapInstance, platformInstance, behaviorInstance, uiInstance };
+  }
 
   // Create a template for marker icons by using custom SVG style
   function createMarkerIcon(color) {
@@ -54,80 +90,16 @@
     ui.setUnitSystem(H.ui.UnitSystem.METRIC);
   }
 
-  function draggableDirections(map, origin, destination) {
-    /**
-     * Returns an instance of H.map.Icon to style the markers
-     * @param {number|string} id An identifier that will be displayed as marker label
-     *
-     * @return {H.map.Icon}
-     */
-    function getMarkerIcon(id) {
-      const svgCircle = `<svg width="30" height="30" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                        <g id="marker">
-                          <circle cx="15" cy="15" r="10" fill="#0099D8" stroke="#0099D8" stroke-width="4" />
-                          <text x="50%" y="50%" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="12px" dy=".3em">${id}</text>
-                        </g></svg>`;
-      return new H.map.Icon(svgCircle, {
-        anchor: {
-          x: 10,
-          y: 10,
-        },
-      });
-    }
-
-    /**
-     * Create an instance of H.map.Marker and add it to the map
-     *
-     * @param {object} position  An object with 'lat' and 'lng' properties defining the position of the marker
-     * @param {string|number} id An identifier that will be displayed as marker label
-     * @return {H.map.Marker} The instance of the marker that was created
-     */
-    function addMarker(position, id) {
-      const marker = new H.map.Marker(position, {
-        data: {
-          id,
-        },
-        icon: getMarkerIcon(id),
-        // Enable smooth dragging
-        volatility: true,
-      });
-      // Enable draggable markers
-      marker.draggable = true;
-
-      map.addObject(marker);
-      return marker;
-    }
-
-    addMarker(origin, "A");
-    addMarker(destination, "B");
-    // This array holds instances of H.map.Marker representing the route waypoints
-    const waypoints = [];
-
-    const routingParams = {
-      origin: `${origin.lat},${origin.lng}`,
-      destination: `${destination.lat},${destination.lng}`,
-      // defines multiple waypoints
-      via: new H.service.Url.MultiValueQueryParameter(waypoints),
-      transportMode: "car",
-      return: "polyline",
-    };
-
-    function updateRoute() {
-      // Add waypoints the route must pass through
-      routingParams.via = new H.service.Url.MultiValueQueryParameter(
-        waypoints.map((wp) => `${wp.getGeometry().lat},${wp.getGeometry().lng}`)
-      );
-
-      router.calculateRoute(routingParams, routeResponseHandler, console.error);
-    }
-
-    const router = platform$2.getRoutingService(null, 8);
+  function draggableDirections(origin, destination) {
+    const {
+      mapInstance: map,
+      platformInstance: platform,
+      behaviorInstance: behavior,
+    } = getMap();
+    // Clear all existing objects from the map
+    map.removeObjects(map.getObjects());
     let routePolyline;
-    /**
-     * Handler for the H.service.RoutingService8#calculateRoute call
-     *
-     * @param {object} response The response object returned by calculateRoute method
-     */
+
     function routeResponseHandler(response) {
       const sections = response.routes[0].sections;
       const lineStrings = [];
@@ -136,7 +108,7 @@
         lineStrings.push(H.geo.LineString.fromFlexiblePolyline(section.polyline));
       });
       const multiLineString = new H.geo.MultiLineString(lineStrings);
-      multiLineString.getBoundingBox();
+      const bounds = multiLineString.getBoundingBox();
 
       // Create the polyline for the route
       if (routePolyline) {
@@ -149,11 +121,81 @@
             lineWidth: 5,
           },
         });
+        // Add the polyline to the map
+        map.addObject(routePolyline);
       }
 
-      // Add the polyline to the map
-      map.addObject(routePolyline);
+      // Ensure the map view includes the whole route
+      map.getViewModel().setLookAtData({ bounds });
     }
+
+    function getMarkerIcon(id) {
+      const svgCircle = `<svg width="30" height="30" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                        <g id="marker">
+                          <circle cx="15" cy="15" r="10" fill="#0099D8" stroke="#0099D8" stroke-width="4" />
+                          <text x="50%" y="50%" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="12px" dy=".3em">${id}</text>
+                        </g></svg>`;
+      return new H.map.Icon(svgCircle, {
+        anchor: {
+          x: 15,
+          y: 15,
+        },
+      });
+    }
+
+    function addMarker(position, id) {
+      if (
+        !position ||
+        typeof position.lat === "undefined" ||
+        typeof position.lng === "undefined"
+      ) {
+        console.error("Invalid position for marker:", position);
+        return null;
+      }
+      const marker = new H.map.Marker(
+        new H.geo.Point(position.lat, position.lng),
+        {
+          data: {
+            id,
+          },
+          icon: getMarkerIcon(id),
+          // Enable smooth dragging
+          volatility: true,
+        }
+      );
+      // Enable draggable markers
+      marker.draggable = true;
+
+      map.addObject(marker);
+      return marker;
+    }
+
+    function updateRoute() {
+      // Add waypoints the route must pass through
+      routingParams.via = new H.service.Url.MultiValueQueryParameter(
+        waypoints.map((wp) => `${wp.getGeometry().lat},${wp.getGeometry().lng}`)
+      );
+
+      router.calculateRoute(routingParams, routeResponseHandler, console.error);
+    }
+
+    addMarker(origin, "A");
+    addMarker(destination, "B");
+    // This array holds instances of H.map.Marker representing the route waypoints
+    const waypoints = [];
+
+    // Define the routing service parameters
+    const routingParams = {
+      origin: `${origin.lat},${origin.lng}`,
+      destination: `${destination.lat},${destination.lng}`,
+      // defines multiple waypoints
+      via: new H.service.Url.MultiValueQueryParameter(waypoints),
+      transportMode: "car",
+      return: "polyline",
+    };
+
+    const router = platform.getRoutingService(null, 8);
+    updateRoute();
 
     /**
      * Listen to the dragstart and store the relevant position information of the marker
@@ -179,25 +221,6 @@
       false
     );
 
-    /**
-     * Listen to the drag event and move the position of the marker as necessary
-     */
-    map.addEventListener(
-      "drag",
-      function (ev) {
-        const target = ev.target;
-        const pointer = ev.currentPointer;
-        if (target instanceof H.map.Marker) {
-          target.setGeometry(
-            map.screenToGeo(
-              pointer.viewportX - target["offset"].x,
-              pointer.viewportY - target["offset"].y
-            )
-          );
-        }
-      },
-      false
-    );
     /**
      * Listen to the dragend and update the route
      */
@@ -225,6 +248,28 @@
       },
       false
     );
+
+    /**
+     * Listen to the drag event and move the position of the marker as necessary
+     */
+    map.addEventListener(
+      "drag",
+      function (ev) {
+        const target = ev.target;
+        const pointer = ev.currentPointer;
+        if (target instanceof H.map.Marker) {
+          const newCoords = map.screenToGeo(
+            pointer.viewportX - target["offset"].x,
+            pointer.viewportY - target["offset"].y
+          );
+          if (newCoords instanceof H.geo.Point) {
+            target.setGeometry(newCoords);
+          }
+        }
+      },
+      false
+    );
+
     /**
      * Listen to the tap event to add a new waypoint
      */
@@ -233,7 +278,7 @@
       const pointer = ev.currentPointer;
       const coords = map.screenToGeo(pointer.viewportX, pointer.viewportY);
 
-      if (!(target instanceof H.map.Marker)) {
+      if (coords instanceof H.geo.Point && !(target instanceof H.map.Marker)) {
         const marker = addMarker(coords, waypoints.length + 1);
         waypoints.push(marker);
         updateRoute();
@@ -246,8 +291,8 @@
       const target = ev.target;
 
       if (target instanceof H.map.Marker) {
-        // Prevent the origin or destination markers from being removed
-        if (["origin", "destination"].indexOf(target.getData().id) !== -1) {
+        // Prevent origin or destination markers from being removed
+        if (["A", "B"].indexOf(target.getData().id) !== -1) {
           return;
         }
 
@@ -273,45 +318,36 @@
         updateRoute();
       }
     });
-
-    behavior.disable(H.mapevents.Behavior.Feature.DBL_TAP_ZOOM);
   }
 
-  // Instantiate a map and platform object:
   const platform$1 = new H.service.Platform({ apiKey: hereCredentials.apikey });
+  // Obtain the default map types from the platform object
+  const defaultLayers = platform$1.createDefaultLayers();
 
-  // Get an instance of the search service:
-  platform$1.getSearchService();
+  // Function to update traffic layer
+  function updateTrafficLayer() {
+    // Get the provider instance from the layer
+    const provider = defaultLayers.vector.traffic.map.getProvider();
+    // Invalidate provider's data and force reload
+    provider.reload(true);
+  }
 
-  // import { H } from "@here/maps-api-for-javascript";
-  // Initialize the platform object:
+  // Refresh traffic layer every 1 minute (60 seconds)
+  const refreshInterval = 60 * 1000; // 60 seconds in milliseconds
+  setInterval(updateTrafficLayer, refreshInterval);
+
+  // Instantiate a map and platform object:
   const platform = new H.service.Platform({ apiKey: hereCredentials.apikey });
 
-  // Obtain the default map types from the platform object
-  const defaultLayers = platform.createDefaultLayers();
+  // Get an instance of the search service:
+  platform.getSearchService();
 
-  // Instantiate (and display) a map object:
-  const map = new H.Map(
-    document.getElementById("map"),
-    defaultLayers.vector.normal.map,
-    {
-      zoom: 12,
-      center: center,
-      pixelRatio: window.devicePixelRatio || 1,
-    }
-  );
-  // MapEvents enables the event system.
-  // The behavior variable implements default interactions for pan/zoom (also on mobile touch environments).
-  new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
-  map.getBaseLayer().getProvider();
+  // import { H } from "@here/maps-api-for-javascript";
 
-  // //Initialize router and geocoder
-  // const router = platform.getRoutingService();
-  //const geocoder = platform.getGeocodingService();
+  // Initialize the map
+  initializeMap();
 
-  window.addEventListener("resize", () => map.getViewPort().resize());
-  // Create the default UI:
-  const ui = H.ui.UI.createDefault(map, defaultLayers, `en-US`);
+  const { mapInstance: map, uiInstance: ui } = getMap();
   // Add the distance measurement tool to the UI
   addDistanceMeasurementTool(ui);
   //reverseGeocode(ui, coordinates);
@@ -322,6 +358,7 @@
   //multiRouteCal(map, waypoints, origin, destination);
   // export { router, geocoder };
 
-  draggableDirections(map, origin, destination);
+  draggableDirections(origin, destination);
+  updateTrafficLayer();
 
 })();
