@@ -154,35 +154,31 @@
       // Create multi-line string from the line strings
       const multiLineString = new H.geo.MultiLineString(lineStrings);
 
-      // Calculate the distance between each waypoint
+      // Calculate the distance along the polyline
       let totalDistance = 0;
-      const distances = [];
+      const segmentDistances = [];
 
-      // Include all points (origin, waypoints, and destination)
-      const allPoints = [origin, ...waypoints, destination];
-
-      // Calculate distance between consecutive points
-      for (let i = 0; i < allPoints.length - 1; i++) {
-        const point1 = new H.geo.Point(allPoints[i].lat, allPoints[i].lng);
-        const point2 = new H.geo.Point(
-          allPoints[i + 1].lat,
-          allPoints[i + 1].lng
-        );
-        const distance = point1.distance(point2);
-        totalDistance += distance;
-        distances.push(distance);
-      }
+      lineStrings.forEach((lineString, segmentIndex) => {
+        let previousPoint = null;
+        let segmentDistance = 0;
+        lineString.eachLatLngAlt((lat, lng, alt, index) => {
+          const currentPoint = new H.geo.Point(lat, lng);
+          if (previousPoint) {
+            const distance = previousPoint.distance(currentPoint);
+            totalDistance += distance;
+            segmentDistance += distance;
+          }
+          previousPoint = currentPoint;
+        });
+        segmentDistances.push(segmentDistance);
+      });
 
       // Log the total distance
-      console.log(`Total distance: ${totalDistance} meters`);
+      console.log(`Total travel distance: ${totalDistance} meters`);
 
-      // Log distances between each pair of consecutive points
-      distances.forEach((distance, index) => {
-        console.log(
-          `Distance from point ${index + 1} to point ${
-          index + 2
-        }: ${distance} meters`
-        );
+      // Log distances between each stopping point
+      segmentDistances.forEach((distance, index) => {
+        console.log(`Distance from segment ${index + 1}: ${distance} meters`);
       });
 
       // Create a polyline to display the route
