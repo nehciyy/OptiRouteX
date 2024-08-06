@@ -1,4 +1,7 @@
 import resolve from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
+import polyfillNode from "rollup-plugin-polyfill-node";
+import json from "@rollup/plugin-json";
 
 export default {
   input: "src/index.js",
@@ -14,5 +17,13 @@ export default {
   //   if (/mapsjs.bundle.js/.test(message) && /Use of eval/.test(message)) return;
   //   console.error(message);
   // },
-  plugins: [resolve()],
+  plugins: [
+    resolve({
+      browser: true,
+      preferBuiltins: false,
+    }),
+    commonjs(),
+    polyfillNode(),
+    json(),
+  ],
 };

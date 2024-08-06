@@ -1,4 +1,5 @@
 import { getMap } from "./mapSingleton";
+import fs from "browserify-fs";
 
 // Create a template for marker icons by using custom SVG style
 function createMarkerIcon(color) {
@@ -110,20 +111,17 @@ export function multiRouteCal(waypoints, origin, destination) {
   const { mapInstance: map, platformInstance: platform } = getMap();
   const waypointMarkers = [];
 
-  // Define the routing parameters
   const routingParameters = {
     routingMode: "fast",
     transportMode: "pedestrian",
     origin: `${origin.lat},${origin.lng}`,
     destination: `${destination.lat},${destination.lng}`,
     return: "polyline",
-    // Add a via parameter to the query for each coordinate pair:
     via: new H.service.Url.MultiValueQueryParameter(
       waypoints.map((wp) => `${wp.lat},${wp.lng}`)
     ),
   };
 
-  // Function to create a custom marker icon with a number
   function createMarkerIcon(color, number) {
     return new H.map.Icon(
       `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
@@ -133,19 +131,15 @@ export function multiRouteCal(waypoints, origin, destination) {
     );
   }
 
-  // Create icons for origin and destination with numbers
   const originIcon = createMarkerIcon("blue", "Start");
   const destinationIcon = createMarkerIcon("red", "End");
 
-  // Callback function to process the routing response
   const onResult = function (result) {
-    // Check if a route was found
     if (!result.routes.length) {
       console.error("No routes found");
       return;
     }
 
-    // Create waypoint markers with numbers
     waypoints.forEach((waypoint, index) => {
       const waypointMarker = new H.map.Marker(
         { lat: waypoint.lat, lng: waypoint.lng },
@@ -154,25 +148,21 @@ export function multiRouteCal(waypoints, origin, destination) {
       waypointMarkers.push(waypointMarker);
     });
 
-    // Add markers for origin and destination with custom icons
     const originMarker = new H.map.Marker(origin, { icon: originIcon });
     const destinationMarker = new H.map.Marker(destination, {
       icon: destinationIcon,
     });
     waypointMarkers.push(originMarker, destinationMarker);
 
-    // Collect line strings for each section of the route
     const lineStrings = [];
     result.routes[0].sections.forEach((section) => {
       lineStrings.push(H.geo.LineString.fromFlexiblePolyline(section.polyline));
     });
 
-    // Create multi-line string from the line strings
     const multiLineString = new H.geo.MultiLineString(lineStrings);
 
     // Calculate the distance along the polyline
     let totalDistance = 0;
-    const distances = [];
     const segmentDistances = [];
 
     lineStrings.forEach((lineString, segmentIndex) => {
@@ -190,15 +180,32 @@ export function multiRouteCal(waypoints, origin, destination) {
       segmentDistances.push(segmentDistance);
     });
 
-    // Log the total distance
-    console.log(`Total travel distance: ${totalDistance} meters`);
+    // Prepare data for JSON file
+    const data = {
+      totalDistance: totalDistance,
+      segmentDistances: segmentDistances,
+    };
 
-    // Log distances between each stopping point
-    segmentDistances.forEach((distance, index) => {
-      console.log(`Distance from segment ${index + 1}: ${distance} meters`);
+    // Write data to a JSON file
+    fs.writeFile("distance.json", JSON.stringify(data, null, 2), (err) => {
+      if (err) {
+        return console.error("Error writing file:", err);
+      }
+      console.log("File has been saved.");
+      console.log("Total Distance:", totalDistance);
+      segmentDistances.forEach((distance, index) => {
+        console.log(`Distance from segment ${index + 1}: ${distance} meters`);
+      });
+      // Verify the content written to the file
+      fs.readFile("distance.json", "utf8", (err, data) => {
+        if (err) {
+          return console.error("Error reading file:", err);
+        }
+        console.log("Content of distance.json:");
+        console.log(data);
+      });
     });
 
-    // Create a polyline to display the route
     const routeLine = new H.map.Polyline(multiLineString, {
       style: {
         strokeColor: "blue",
@@ -206,11 +213,9 @@ export function multiRouteCal(waypoints, origin, destination) {
       },
     });
 
-    // Create a group that holds the route and waypoint markers
     const group = new H.map.Group();
     group.addObjects([routeLine, ...waypointMarkers]);
 
-    // Add the group to the map if the map object is defined and valid
     if (typeof map !== "undefined" && map instanceof H.Map) {
       map.addObject(group);
     } else {
@@ -218,11 +223,7 @@ export function multiRouteCal(waypoints, origin, destination) {
     }
   };
 
-  // Get an instance of the routing service version 8
   const router = platform.getRoutingService(null, 8);
-
-  // Call the calculateRoute() method with the routing parameters,
-  // the callback, and an error callback function
   router.calculateRoute(routingParameters, onResult, function (error) {
     console.error(error.message);
     alert(error.message);
