@@ -1,5 +1,6 @@
 import { getMap } from "./mapSingleton";
 import fs from "browserify-fs";
+import { saveAsJSON } from "./generationJSON";
 
 // Create a template for marker icons by using custom SVG style
 function createMarkerIcon(color) {
@@ -186,25 +187,8 @@ export function multiRouteCal(waypoints, origin, destination) {
       segmentDistances: segmentDistances,
     };
 
-    // Write data to a JSON file
-    fs.writeFile("distance.json", JSON.stringify(data, null, 2), (err) => {
-      if (err) {
-        return console.error("Error writing file:", err);
-      }
-      console.log("File has been saved.");
-      console.log("Total Distance:", totalDistance);
-      segmentDistances.forEach((distance, index) => {
-        console.log(`Distance from segment ${index + 1}: ${distance} meters`);
-      });
-      // Verify the content written to the file
-      fs.readFile("distance.json", "utf8", (err, data) => {
-        if (err) {
-          return console.error("Error reading file:", err);
-        }
-        console.log("Content of distance.json:");
-        console.log(data);
-      });
-    });
+    // Save the data to a JSON file
+    saveAsJSON(data, "distances");
 
     const routeLine = new H.map.Polyline(multiLineString, {
       style: {

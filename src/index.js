@@ -9,6 +9,7 @@ import {
 import { updateTrafficLayer } from "./traffic.js";
 import { reverseGeocode, autoSuggestion } from "./location.js";
 import fs from "browserify-fs";
+import { saveAsJSON, loadFromJSON } from "./generationJSON.js";
 
 // Initialize the map
 initializeMap();
@@ -49,19 +50,12 @@ waypoints.forEach((waypoint, index) => {
 
 console.log(locations);
 
-// Function to save locations to a JSON file
-function saveLocationsToFile(locations) {
-  fs.writeFile("locations.json", JSON.stringify(locations, null, 2), (err) => {
-    if (err) {
-      return console.error("Error writing file:", err);
-    }
-    console.log("File has been saved.");
-  });
-}
+// Save locations to a JSON file
+saveAsJSON(locations, "locations");
 
-// Call the function to save locations
-saveLocationsToFile(locations);
+// Calculate routes and save distances to a JSON file
 multiRouteCal(waypoints, origin, destination);
+
 // export { router, geocoder };
 
 //draggableDirections(origin, destination);
