@@ -2,6 +2,8 @@
 
 `npm run run-all`
 
+## You are able to change your command to run program in package.json
+
 ---
 
 # To merge dev branch to main branch
