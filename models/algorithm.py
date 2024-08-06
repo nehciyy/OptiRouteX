@@ -2,16 +2,24 @@ import random
 import numpy as np
 from deap import base, creator, tools, algorithms
 import json
+import os
+
+# Set the correct path to JSON files
+script_dir = os.path.dirname(__file__)
+locations_path = os.path.join(script_dir, 'locations.json')
+distances_path = os.path.join(script_dir, 'distances.json')
+print(locations_path)
+print(distances_path)
 
 # Load locations from JSON file
 def load_locations():
-    with open('locations.json', 'r') as file:
+    with open(locations_path, 'r') as file:
         locations = json.load(file)
     return locations
 
 # Load distances from JSON file
 def load_distances():
-    with open('distances.json', 'r') as file:
+    with open(distances_path, 'r') as file:
         data = json.load(file)
     total_distance = data['totalDistance']
     segment_distances = data['segmentDistances']
@@ -35,8 +43,6 @@ def convert_time(seconds):
     minutes = int(seconds // 60)
     seconds = int(seconds % 60)
     return f"{minutes} minutes, {seconds} seconds"
-
-
 
 # DEAP setup
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
@@ -75,7 +81,7 @@ def main():
 
 if __name__ == "__main__":
     locations = load_locations()
-    total_distance, distances = load_distances()
+    total_distance, segment_distances = load_distances()
     pop, log, hof = main()
     best_individual = hof[0]
     best_route = [list(locations.keys())[i] for i in best_individual]
