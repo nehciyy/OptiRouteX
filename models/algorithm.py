@@ -1,37 +1,42 @@
 import random
 import numpy as np
 from deap import base, creator, tools, algorithms
-import geopy.distance
+import json
 
-#latitude and longitude  taken from https://www.findlatitudeandlongitude.com/
-locations = {"A":(1.28668,103.853607), #Merlion
-             "B":(1.301114,103.838872), #313 Somerset
-             "C":(1.28437,103.8599), #Marina Bay Sands
-             "D":(1.281517,103.865774), #Gardens by the Bay
-             "E":(1.289299,103.863137)} #Singapore Flyer
+# Load locations from JSON file
+def load_locations():
+    with open('locations.json', 'r') as file:
+        locations = json.load(file)
+    return locations
 
-# Calculate distance between two points
-def calculate_distance(locations):
-    keys = list(locations.keys())
-    distance_matrix = np.zeros((len(keys), len(keys)))
-    for i, key1 in enumerate(keys):
-        for j, key2 in enumerate(keys):
-            if i != j:
-                point1 = locations[key1]
-                point2 = locations[key2]
-                distance_matrix[i][j] = geopy.distance.distance(point1, point2).meters
-    return distance_matrix
+# Load distances from JSON file
+def load_distances():
+    with open('distances.json', 'r') as file:
+        data = json.load(file)
+    total_distance = data['totalDistance']
+    segment_distances = data['segmentDistances']
+    return total_distance, segment_distances
 
-distance_matrix = calculate_distance(locations)
+# Load the data
+locations = load_locations()
+total_distance, segment_distances = load_distances()
 
 # Create the fitness function
 def fitness(individual):
     total_distance = 0
-    for i in range (len(individual)-1):
-        total_distance += distance_matrix[individual[i]][individual[i+1]]
-    total_distance += distance_matrix[individual[-1]][individual[0]] # return to starting point
-    travel_time = total_distance /15 # assuming speed of travel is 15 meters per second
+    for i in range(len(individual) - 1):
+        total_distance += segment_distances[individual[i]]
+    total_distance += segment_distances[individual[-1]]  # return to starting point
+    travel_time = total_distance / 15  # assuming speed of travel is 15 meters per second
     return travel_time,
+
+# Convert time from seconds to minutes and seconds
+def convert_time(seconds):
+    minutes = int(seconds // 60)
+    seconds = int(seconds % 60)
+    return f"{minutes} minutes, {seconds} seconds"
+
+
 
 # DEAP setup
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
@@ -46,13 +51,6 @@ toolbox.register("evaluate", fitness)
 toolbox.register("mate", tools.cxOrdered)
 toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
 toolbox.register("select", tools.selTournament, tournsize=3)
-
-
-# Convert time from seconds to minutes and seconds
-def convert_time(seconds):
-    minutes = int(seconds // 60)
-    seconds = int(seconds % 60)
-    return f"{minutes} minutes, {seconds} seconds"
 
 # Genetic Algorithm parameters
 population_size = 300
@@ -76,6 +74,8 @@ def main():
     return pop, log, hof
 
 if __name__ == "__main__":
+    locations = load_locations()
+    total_distance, distances = load_distances()
     pop, log, hof = main()
     best_individual = hof[0]
     best_route = [list(locations.keys())[i] for i in best_individual]
