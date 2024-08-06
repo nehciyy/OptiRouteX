@@ -17,10 +17,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "bundle": "rollup --config rollup.config.js",
-    "start-server": "python -m http.server 8000 &",
+    "start-server": "python -m http.server 8000",
+    "start-flask": "python app.py",
     "run-algorithm": "python ./models/algorithm.py",
     "wait-server": "wait-on http://localhost:8000",
-    "run-all": "npm run bundle && concurrently --kill-others \"npm run start-server\" \"npm run wait-server && npm run run-algorithm\""
+    "run-all": "npm run bundle && concurrently --kill-others \"npm run start-server\" \"npm run start-flask\" \"npm run wait-server && npm run run-algorithm\""
   },
   "module": "dist/index.es.mjs",
   "exports": "./dist/index.es.mjs",

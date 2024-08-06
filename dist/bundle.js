@@ -22004,13 +22004,21 @@
   	
   } (FileSaver_min));
 
-  var FileSaver_minExports = FileSaver_min.exports;
-
   const saveAsJSON = (data, fileName) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    FileSaver_minExports.saveAs(blob, `${fileName}.json`);
+    fetch("http://localhost:5000/save-json", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ fileName, data }),
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        console.log(result);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   };
 
   // Create a template for marker icons by using custom SVG style
