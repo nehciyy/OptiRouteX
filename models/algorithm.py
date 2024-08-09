@@ -8,8 +8,7 @@ import os
 script_dir = os.path.dirname(__file__)
 locations_path = os.path.join(script_dir, 'locations.json')
 distances_path = os.path.join(script_dir, 'distances.json')
-print(locations_path)
-print(distances_path)
+output_path = os.path.join(script_dir, 'best_route.json')
 
 # Load locations from JSON file
 def load_locations():
@@ -31,12 +30,20 @@ total_distance, segment_distances = load_distances()
 
 # Create the fitness function
 def fitness(individual):
+    # Get the list of keys from the waypoints dictionary
+    waypoint_keys = list(locations['waypoints'].keys())
+
+    # Build the route by using the keys from waypoint_keys and the indices from individual
+    route = [locations['origin']] + [locations['waypoints'][waypoint_keys[i]] for i in individual] + [locations['destination']]
+    
     total_distance = 0
-    for i in range(len(individual) - 1):
-        total_distance += segment_distances[individual[i]]
-    total_distance += segment_distances[individual[-1]]  # return to starting point
-    travel_time = total_distance / 15  # assuming speed of travel is 15 meters per second
+
+    for i in range(len(route) - 1):
+        total_distance += segment_distances[i]
+    
+    travel_time = total_distance / 15  # Assuming speed of travel is 15 meters per second
     return travel_time,
+
 
 # Convert time from seconds to minutes and seconds
 def convert_time(seconds):
@@ -48,8 +55,10 @@ def convert_time(seconds):
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
 
+waypoint_keys = list(locations['waypoints'].keys())  # Extract waypoint keys
+
 toolbox = base.Toolbox()
-toolbox.register("indices", random.sample, range(len(locations)), len(locations))
+toolbox.register("indices", random.sample, range(len(waypoint_keys)), len(waypoint_keys))
 toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.indices)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
@@ -58,12 +67,19 @@ toolbox.register("mate", tools.cxOrdered)
 toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
+
 # Genetic Algorithm parameters
 population_size = 300
 crossover_probability = 0.8
 mutation_probability = 0.2
 generations = 100
 
+#Save the best route to a JSON file
+def save_best_route(best_route,shortest_time_formatted):
+    output_data={"best_route":best_route,"shortest_time":shortest_time_formatted}
+    with open(output_path, 'w') as outfile:
+         json.dump(output_data, outfile, indent=4)
+    print(f"Best route saved to {output_path}")
 # Genetic Algorithm
 def main():
     pop = toolbox.population(n=population_size)
@@ -84,8 +100,15 @@ if __name__ == "__main__":
     total_distance, segment_distances = load_distances()
     pop, log, hof = main()
     best_individual = hof[0]
-    best_route = [list(locations.keys())[i] for i in best_individual]
+    best_waypoint_order = [waypoint_keys[i] for i in best_individual]
+
+    # Include origin and destination in the best route
+    best_route = ['origin'] + best_waypoint_order + ['destination']
     shortest_time_seconds = fitness(best_individual)[0]
     shortest_time_formatted = convert_time(shortest_time_seconds)
+    
     print("Best route:", best_route)
     print("Shortest time (seconds):", shortest_time_formatted)
+
+    # Save the best route to JSON file
+    save_best_route(best_route, shortest_time_formatted)
