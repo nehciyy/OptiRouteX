@@ -54,7 +54,7 @@ Before running the program, ensure that the locations are properly set up in the
 You can obtain the latitude and longitude coordinates from [findlatitudeandlongitude](#https://www.findlatitudeandlongitude.com/) for coordinates.
 
 Here is where you can retrieve the latitude and longitude
-![Find latitude and longitude](./images/findCoordinate.png)
+![Find latitude and longitude](images/findCoordinate.png)
 
 ### 2. Running the Program
 
