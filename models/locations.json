@@ -15,9 +15,25 @@
       "lat": 1.28668,
       "lng": 103.853607
     },
-    { "location": "313 Somerset", "lat": 1.301114, "lng": 103.838872 },
-    { "location": "Marina Bay Sands", "lat": 1.28437, "lng": 103.8599 },
-    { "location": "Gardens by the Bay", "lat": 1.281517, "lng": 103.865774 },
-    { "location": "Singapore Flyer", "lat": 1.289299, "lng": 103.863137 }
+    {
+      "location": "313 Somerset",
+      "lat": 1.301114,
+      "lng": 103.838872
+    },
+    {
+      "location": "Marina Bay Sands",
+      "lat": 1.28437,
+      "lng": 103.8599
+    },
+    {
+      "location": "Gardens by the Bay",
+      "lat": 1.281517,
+      "lng": 103.865774
+    },
+    {
+      "location": "Singapore Flyer",
+      "lat": 1.289299,
+      "lng": 103.863137
+    }
   ]
 }

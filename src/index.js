@@ -1,16 +1,8 @@
-import fs from "browserify-fs";
-// Static import of the JSON file
-import locations from "../models/locations.json" assert { type: "json" };
 import { initializeMap, getMap } from "./mapSingleton.js";
 import {
   addDistanceMeasurementTool,
-  routeCal,
   multiRouteCal,
-  draggableDirections,
 } from "./distanceMeasure.js";
-import { updateTrafficLayer } from "./traffic.js";
-import { reverseGeocode, autoSuggestion } from "./location.js";
-import { saveAsJSON, loadFromJSON } from "./generationJSON.js";
 
 // Initialize the map
 initializeMap();
@@ -19,29 +11,54 @@ const { mapInstance: map, uiInstance: ui } = getMap();
 // Add the distance measurement tool to the UI
 addDistanceMeasurementTool(ui);
 
-// Call reverseGeocode with dynamic parameters
+// Periodically check for new route data from Flask
+setInterval(() => {
+  // Ensure task_id is correctly retrieved from URL
+  const task_id = new URLSearchParams(window.location.search).get("task_id");
+  if (!task_id) {
+    console.error("Task ID is missing");
+    return; // Avoid making any API requests if task_id is missing
+  }
 
-//reverseGeocode(ui, coordinates);
-//autoSuggestion(ui, "Merlion", coordinates);
+  fetch(`http://localhost:5000/get-route-data?task_id=${task_id}`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.status !== "no_data") {
+        const { origin, waypoints, destination } = data;
+        console.log("Received route data from Flask:", data);
 
-//routeCal(origin, destination);
-
-// Extract origin, destination, and waypoints from the loaded data
-const origin = locations.origin;
-const destination = locations.destination;
-const waypoints = Object.values(locations.waypoints); // Convert waypoints object to an array
-
-// Log loaded coordinates for verification
-console.log("Loaded coordinates from file:", {
-  origin,
-  destination,
-  waypoints,
-});
-
-// Pass the loaded data to the multiRouteCal function
-multiRouteCal(waypoints, origin, destination);
-
-// export { router, geocoder };
-
-//draggableDirections(origin, destination);
-//updateTrafficLayer();
+        // Validate that origin, waypoints, and destination are defined
+        if (origin && waypoints && destination) {
+          // Calculate the route using multiRouteCal
+          multiRouteCal(waypoints, origin, destination, task_id)
+            .then((result) => {
+              // Send the calculated data back to Flask
+              return fetch(`http://localhost:5000/receive-data/${task_id}`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  total_distance: result.totalDistance,
+                  segment_distances: result.segmentDistances,
+                }),
+              });
+            })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Data successfully sent to Flask:", data);
+            })
+            .catch((error) => {
+              console.error("Error sending data to Flask:", error);
+            });
+        } else {
+          console.error("Origin, waypoints, or destination is missing");
+        }
+      } else {
+        console.error("No data available for the provided task_id");
+      }
+    })
+    .catch((error) =>
+      console.error("Error fetching route data from Flask:", error)
+    );
+}, 1000);
