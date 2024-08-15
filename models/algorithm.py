@@ -6,6 +6,7 @@ import os
 import requests
 import csv
 import time
+import webbrowser
 
 # Set the correct path to JSON files
 script_dir = os.path.dirname(__file__)
@@ -53,6 +54,12 @@ def fitness(individual):
     
     if response.status_code == 202:  # Accepted, task has started processing
         task_id = response.json().get("task_id")
+    
+        # Open the URL with the task_id in the default web browser
+        url_to_open = f"http://localhost:8000/?task_id={task_id}"
+        print(f"Opening browser for task ID: {task_id}")
+        webbrowser.open(url_to_open)
+   
         # Poll for the results
         total_distance, segment_distances = poll_for_results(task_id)
         return total_distance, segment_distances

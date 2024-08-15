@@ -17,9 +17,11 @@ def calculate_route():
     
     # Store the location data in memory
     task_data[task_id] = data
-    data['task_id'] = task_id
+
+    print(f"Task ID {task_id} received and processing started.")  # Debugging output
 
     return jsonify({"task_id": task_id}), 202
+
 
 @app.route('/get-results/<task_id>', methods=['GET'])
 def get_results(task_id):
