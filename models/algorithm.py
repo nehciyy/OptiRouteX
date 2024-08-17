@@ -12,8 +12,8 @@ from selenium.webdriver.chrome.options import Options
 # Set the correct path to JSON files
 script_dir = os.path.dirname(__file__)
 locations_path = os.path.join(script_dir, 'locations.json')
-output_path = os.path.join(script_dir, 'best_route.json')
 csv_file_path = os.path.join(script_dir, 'generation_results.csv')
+best_route_csv_path = os.path.join(script_dir, 'best_route_results.csv')
 
 # Load locations from JSON file
 def load_locations():
@@ -71,16 +71,21 @@ def fitness(individual):
         browser_instance.get(url_to_open)
         total_distance, segment_distances = poll_for_results(task_id)
         print(f"Fitness function completed for task ID: {task_id}")
-        return total_distance, segment_distances
-    else:
-        return float('inf'),
 
-# Save the best route
-def save_best_route(best_route, shortest_time_formatted):
-    output_data = {"best_route": best_route, "shortest_time": shortest_time_formatted}
-    with open(output_path, 'w') as outfile:
-        json.dump(output_data, outfile, indent=4)
-    print(f"Best route saved to {output_path}")
+        # Calculate how many waypoints were traveled at half the total distance
+        half_distance = total_distance / 2
+        cumulative_distance = 0
+        waypoints_covered_at_half_distance = 0
+        for segment in segment_distances:
+            cumulative_distance += segment
+            if cumulative_distance >= half_distance:
+                break
+            waypoints_covered_at_half_distance += 1
+
+        # Fitness is now a tuple of (total_distance, -waypoints_covered_at_half_distance)
+        return total_distance, -waypoints_covered_at_half_distance
+    else:
+        return float('inf'), 0
 
 # Convert time from seconds to minutes and seconds
 def convert_time(seconds):
@@ -88,35 +93,48 @@ def convert_time(seconds):
     seconds = int(seconds % 60)
     return f"{minutes} minutes, {seconds} seconds"
 
-# Log generation results to CSV
-def log_generation_results(writer, gen, best_waypoint_order, total_distance, segment_distances):
-    print(f"Logging results for generation {gen + 1}...")
+# Store generation results in a list
+def store_generation_results(generation_results, gen, best_waypoint_order, total_distance, waypoints_covered_at_half_distance):
+    print(f"Storing results for generation {gen + 1}...")
     total_time_seconds = total_distance / 15
     total_time_formatted = convert_time(total_time_seconds)
-    half_distance = total_distance / 2
-    cumulative_distance = 0
-    time_at_half_distance = 0
-    for segment in segment_distances:
-        cumulative_distance += segment
-        if cumulative_distance >= half_distance:
-            time_at_half_distance += (half_distance - (cumulative_distance - segment)) / 15
-            break
-        else:
-            time_at_half_distance += segment / 15
-    time_at_half_distance_formatted = convert_time(time_at_half_distance)
-    writer.writerow({
+
+    generation_results.append({
         'generation': gen + 1,
         'route_taken': ' -> '.join(['origin'] + best_waypoint_order + ['destination']),
         'total_distance': total_distance,
         'total_time': total_time_formatted,
-        'total_time_at_half_distance': time_at_half_distance_formatted
+        'locations_at_half_distance': waypoints_covered_at_half_distance
     })
-    writer.flush()
-    os.fsync(writer.fileno())
-    print(f"Results for generation {gen + 1} logged.")
+
+# Write all stored generation results to CSV at the end
+def write_results_to_csv(generation_results, best_route, total_distance, total_time, locations_at_half_distance):
+    print("Writing all results to CSV files...")
+
+    # Write generation results to CSV
+    with open(csv_file_path, mode='w', newline='') as csv_file:
+        fieldnames = ['generation', 'route_taken', 'total_distance', 'total_time', 'locations_at_half_distance']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for result in generation_results:
+            writer.writerow(result)
+
+    # Write best route to separate CSV
+    with open(best_route_csv_path, mode='w', newline='') as best_route_csv_file:
+        fieldnames = ['best_route', 'total_distance', 'total_time', 'locations_at_half_distance']
+        writer = csv.DictWriter(best_route_csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerow({
+            'best_route': ' -> '.join(best_route),
+            'total_distance': total_distance,
+            'total_time': total_time,
+            'locations_at_half_distance': locations_at_half_distance
+        })
+
+    print(f"Results written to {csv_file_path} and {best_route_csv_path}")
 
 # DEAP setup
-creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+creator.create("FitnessMin", base.Fitness, weights=(-1.0, 1.0))
 creator.create("Individual", list, fitness=creator.FitnessMin)
 
 toolbox = base.Toolbox()
@@ -147,66 +165,61 @@ if __name__ == "__main__":
         stats.register("min", np.min)
         stats.register("max", np.max)
 
-        with open(csv_file_path, mode='w', newline='') as csv_file:
-            fieldnames = ['generation', 'route_taken', 'total_distance', 'total_time', 'total_time_at_half_distance']
-            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-            writer.writeheader()
+        generation_results = []  # List to store results for all generations
 
-            for gen in range(generations):
-                print(f"Generation {gen + 1}/{generations} started.")
+        for gen in range(generations):
+            print(f"Generation {gen + 1}/{generations} started.")
 
-                # Fitness evaluation
-                fitnesses = list(map(toolbox.evaluate, pop))
-                for ind, fit in zip(pop, fitnesses):
-                    ind.fitness.values = fit
+            # Fitness evaluation
+            fitnesses = list(map(toolbox.evaluate, pop))
+            for ind, fit in zip(pop, fitnesses):
+                ind.fitness.values = fit
 
-                best_individual = tools.selBest(pop, 1)[0]
-                best_waypoint_order = [locations['waypoints'][i]['location'] for i in best_individual]
-                total_distance, segment_distances = fitness(best_individual)
+            best_individual = tools.selBest(pop, 1)[0]
+            best_waypoint_order = [locations['waypoints'][i]['location'] for i in best_individual]
+            total_distance, waypoints_covered_at_half_distance = best_individual.fitness.values
 
-                # Log the generation results
-                log_generation_results(writer, gen, best_waypoint_order, total_distance, segment_distances)
+            # Store the generation results
+            store_generation_results(generation_results, gen, best_waypoint_order, total_distance, waypoints_covered_at_half_distance)
 
-                # Select and evolve the next generation
-                offspring = toolbox.select(pop, len(pop))
-                offspring = list(map(toolbox.clone, offspring))
+            # Select and evolve the next generation
+            offspring = toolbox.select(pop, len(pop))
+            offspring = list(map(toolbox.clone, offspring))
 
-                for child1, child2 in zip(offspring[::2], offspring[1::2]):
-                    if random.random() < crossover_probability:
-                        toolbox.mate(child1, child2)
-                        del child1.fitness.values
-                        del child2.fitness.values
+            for child1, child2 in zip(offspring[::2], offspring[1::2]):
+                if random.random() < crossover_probability:
+                    toolbox.mate(child1, child2)
+                    del child1.fitness.values
+                    del child2.fitness.values
 
-                for mutant in offspring:
-                    if random.random() < mutation_probability:
-                        toolbox.mutate(mutant)
-                        del mutant.fitness.values
+            for mutant in offspring:
+                if random.random() < mutation_probability:
+                    toolbox.mutate(mutant)
+                    del mutant.fitness.values
 
-                invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-                fitnesses = map(toolbox.evaluate, invalid_ind)
-                for ind, fit in zip(invalid_ind, fitnesses):
-                    ind.fitness.values = fit
+            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+            fitnesses = map(toolbox.evaluate, invalid_ind)
+            for ind, fit in zip(invalid_ind, fitnesses):
+                ind.fitness.values = fit
 
-                pop[:] = offspring
-                record = stats.compile(pop)
-                print(f"Statistics for generation {gen + 1}: {record}")
-                hof.update(pop)
+            pop[:] = offspring
+            record = stats.compile(pop)
+            print(f"Statistics for generation {gen + 1}: {record}")
+            hof.update(pop)
 
-            print("Main genetic algorithm completed.")
-
-        return pop, hof
+        print("Main genetic algorithm completed.")
+        return pop, hof, generation_results
 
     browser_instance = setup_headless_browser()
     try:
-        pop, hof = main()
+        pop, hof, generation_results = main()
         best_individual = hof[0]
         best_waypoint_order = [locations['waypoints'][i]['location'] for i in best_individual]
         best_route = [locations['origin']['location']] + best_waypoint_order + [locations['destination']['location']]
-        total_distance, segment_distances = fitness(best_individual)
-        shortest_time_seconds = total_distance / 15
-        shortest_time_formatted = convert_time(shortest_time_seconds)
+        total_distance, locations_at_half_distance = best_individual.fitness.values
+        total_time = convert_time(total_distance / 15)
         print("Best route:", best_route)
-        print("Shortest time (seconds):", shortest_time_formatted)
-        save_best_route(best_route, shortest_time_formatted)
+        print("Shortest time:", total_time)
+        write_results_to_csv(generation_results, best_route, total_distance, total_time, locations_at_half_distance)
     finally:
         browser_instance.quit()
