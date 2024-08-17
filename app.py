@@ -1,33 +1,30 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import uuid
-import json
+import logging
 
 app = Flask(__name__)
 CORS(app)
 
-tasks = {}  # Store task results keyed by task ID
-task_data = {}  # Dictionary to store task-specific location data
+tasks = {}
+task_data = {}
+
+logging.basicConfig(level=logging.INFO)
 
 @app.route('/calculate-route', methods=['POST'])
 def calculate_route():
     data = request.get_json()
-    task_id = str(uuid.uuid4())  # Generate a unique task ID
-    tasks[task_id] = {"status": "processing"}  # Mark task as processing
-    
-    # Store the location data in memory
+    task_id = str(uuid.uuid4())
+    tasks[task_id] = {"status": "processing"}
     task_data[task_id] = data
 
-    print(f"Task ID {task_id} received and processing started.")  # Debugging output
-
+    logging.info(f"Task {task_id} started processing with data: {data}")
     return jsonify({"task_id": task_id}), 202
-
 
 @app.route('/get-results/<task_id>', methods=['GET'])
 def get_results(task_id):
     task = tasks.get(task_id)
     if task:
-        # Only return the results if the task is complete
         if task['status'] == 'complete':
             return jsonify(task)
         else:
@@ -37,10 +34,9 @@ def get_results(task_id):
 
 @app.route('/receive-data/<task_id>', methods=['POST'])
 def receive_data(task_id):
-    if task_id == "null" or not task_id:
+    if not task_id:
         return jsonify({"status": "error", "message": "Task ID is missing or invalid"}), 400
-    
-    # Proceed with processing...
+
     data = request.json
     total_distance = data.get('total_distance')
     segment_distances = data.get('segment_distances')
@@ -50,8 +46,8 @@ def receive_data(task_id):
         "total_distance": total_distance,
         "segment_distances": segment_distances
     }
-    
-    # Optionally, delete the in-memory data to free up space
+
+    logging.info(f"Task {task_id} completed with distance: {total_distance}")
     if task_id in task_data:
         del task_data[task_id]
 
@@ -63,7 +59,6 @@ def get_route_data():
     if not task_id:
         return jsonify({"status": "error", "message": "Task ID is required"}), 400
 
-    # Fetch the location data from memory
     if task_id in task_data:
         return jsonify(task_data[task_id])
     return jsonify({"status": "no_data"}), 404
