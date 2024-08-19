@@ -9,11 +9,14 @@ import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-# Set the correct path to JSON files
+# Set the correct path to JSON and CSV files in the data folder outside of the models folder
 script_dir = os.path.dirname(__file__)
+parent_dir = os.path.abspath(os.path.join(script_dir, os.pardir))  # Go one level up from the models folder
+data_folder_path = os.path.join(parent_dir, 'data')
+
 locations_path = os.path.join(script_dir, 'locations.json')
-csv_file_path = os.path.join(script_dir, 'generation_results.csv')
-best_route_csv_path = os.path.join(script_dir, 'best_route_results.csv')
+csv_file_path = os.path.join(data_folder_path, 'generation_results_gen5_test10.csv')
+best_route_csv_path = os.path.join(data_folder_path, 'best_route_gen5_test10.csv')
 
 # Load locations from JSON file
 def load_locations():

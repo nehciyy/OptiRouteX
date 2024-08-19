@@ -34,6 +34,31 @@
       "location": "Singapore Flyer",
       "lat": 1.289299,
       "lng": 103.863137
+    },
+    {
+      "location": "Singapore Zoo",
+      "lat": 1.352083,
+      "lng": 103.819836
+    },
+    {
+      "location": "National University of Singapore",
+      "lat": 1.296643,
+      "lng": 103.776394
+    },
+    {
+      "location": "Plaza Singapura",
+      "lat": 1.29991,
+      "lng": 103.859812
+    },
+    {
+      "location": "East Coast Park",
+      "lat": 1.300784,
+      "lng": 103.912187
+    },
+    {
+      "location": "Paya Lebar Square",
+      "lat": 1.31886,
+      "lng": 103.89269
     }
   ]
 }
