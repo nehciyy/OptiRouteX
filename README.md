@@ -124,7 +124,7 @@ To start the program, follow these steps by running commands in three consecutiv
 
 All three terminals need to be running simultaneously as they are interdependent and work together to execute the program.
 
-# 3. Retrieving Results
+### 3. Retrieving Results
 
 After running the program, you can find the following results stored in the data folder:
 
