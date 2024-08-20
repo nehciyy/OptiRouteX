@@ -2,18 +2,24 @@
 
 OptiRouteX is a program designed to optimize and calculate the shortest possible route between specified locations using genetic algorithms. The program uses latitude and longitude coordinates for various waypoints, an origin, and a destination to determine the optimal path.
 
-## Tech Stack
+### Tech Stack
 
-OptiRouteX is built using the following technologies:
+<p align="center">
+  <img src="https://img.shields.io/badge/-Python-333?style=flat&logo=python" alt="Python" height="50"/>
+  <img src="https://img.shields.io/badge/-JavaScript-333?style=flat&logo=javascript" alt="JavaScript" height="50"/>
+  <img src="https://img.shields.io/badge/-Node.js-333?style=flat&logo=node.js" alt="Node.js" height="50"/>
+  <img src="https://img.shields.io/badge/-Rollup.js-333?style=flat&logo=rollup.js" alt="Rollup.js" height="50"/>
+  <img src="https://img.shields.io/badge/-HTML-333?style=flat&logo=html5" alt="HTML" height="50"/>
+  <img src="https://img.shields.io/badge/-DEAP-333?style=flat&logo=python" alt="DEAP" height="50"/>
+  <img src="https://img.shields.io/badge/-HERE%20Maps%20API-333?style=flat&logo=here" alt="HERE Maps API" height="50"/>
+  <img src="https://img.shields.io/badge/-HTTP%20Server-333?style=flat&logo=apache" alt="HTTP Server" height="50"/>
+</p>
 
-- **Python**: Core logic for the genetic algorithm and API server.
-- **JavaScript**: Frontend logic and interaction with the map and route calculation.
-  - **Node.js**: Used for managing dependencies and running various build scripts.
-  - **Rollup.js**: Module bundler to package the JavaScript files.
-  - **HTML**: For rendering the map interface and user interaction.
-- **DEAP Library (Python)**: Used to implement the genetic algorithm for route optimization.
-- **HERE Maps API**: Utilized for map rendering and route calculation.
-- **HTTP Server**: Used to serve the frontend application locally.
+### Features
+
+- **Dynamic Route Optimization**: Calculates the shortest possible route between the origin, destination, and waypoints using genetic algorithms.
+- **Real-Time Map Rendering**: Visualizes the optimized route on an interactive map interface.
+- **Waypoint Management**: Easily customize and manage waypoints through a JSON configuration file.
 
 ## File Structure and Descriptions
 
@@ -46,12 +52,6 @@ OptiRouteX is built using the following technologies:
 
 - **`locations.json`**: The configuration file where all location data (origin, destination, and waypoints) is stored. This file is used by the program to perform route calculations.
 - **`algorithm.py`**: The core Python script that implements the genetic algorithm for route optimization, interacting with other components like `distanceMeasure.js` to dynamically calculate the best route.
-
-## Features
-
-- **Dynamic Route Optimization**: Calculates the shortest possible route between the origin, destination, and waypoints using genetic algorithms.
-- **Real-Time Map Rendering**: Visualizes the optimized route on an interactive map interface.
-- **Waypoint Management**: Easily customize and manage waypoints through a JSON configuration file.
 
 ## Getting Started
 
