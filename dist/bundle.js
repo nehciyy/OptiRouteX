@@ -5,6 +5,7 @@
     id: "HERE-580478a9-edc0-4a38-8842-1393f0e46820",
     code: "BYa7o5f155QWUHkSmjWA",
     apikey: "G1OcoyO4L7xsmvpkua0a1KxPS4FvaqgwBpG_2cyXlXc",
+    TRAFFIC_API_URL: "https://traffic.ls.hereapi.com/traffic/7.16/flow.json",
   };
 
   let mapInstance = null;
@@ -51,6 +52,22 @@
     return { mapInstance, platformInstance, behaviorInstance, uiInstance };
   }
 
+  async function getRealTimeTrafficData(lat, lng) {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/proxy-traffic?lat=${lat}&lng=${lng}`
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Traffic Data:", data); // Log the traffic data to verify it
+      return data;
+    } catch (error) {
+      console.error("Failed to fetch traffic data:", error);
+    }
+  }
+
   // Create a template for marker icons by using custom SVG style
   function createMarkerIcon(color) {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32">
@@ -90,117 +107,6 @@
     ui.setUnitSystem(H.ui.UnitSystem.METRIC);
   }
 
-  function multiRouteCal(waypoints, origin, destination, task_id) {
-    return new Promise((resolve, reject) => {
-      const { mapInstance: map, platformInstance: platform } = getMap();
-      const waypointMarkers = [];
-
-      const routingParameters = {
-        routingMode: "fast",
-        transportMode: "pedestrian",
-        origin: `${origin.lat},${origin.lng}`,
-        destination: `${destination.lat},${destination.lng}`,
-        return: "polyline",
-        via: new H.service.Url.MultiValueQueryParameter(
-          waypoints.map((wp) => `${wp.lat},${wp.lng}`)
-        ),
-      };
-
-      function createMarkerIcon(color, number) {
-        return new H.map.Icon(
-          `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
-                  <circle cx="15" cy="15" r="10" fill="${color}" stroke="white" stroke-width="2"/>
-                  <text x="15" y="20" font-size="12" font-family="Arial" fill="white" text-anchor="middle">${number}</text>
-              </svg>`
-        );
-      }
-
-      const originIcon = createMarkerIcon("blue", "Start");
-      const destinationIcon = createMarkerIcon("red", "End");
-
-      const onResult = function (result) {
-        if (!result.routes.length) {
-          console.error("No routes found");
-          reject("No routes found");
-          return;
-        }
-
-        waypoints.forEach((waypoint, index) => {
-          const waypointMarker = new H.map.Marker(
-            { lat: waypoint.lat, lng: waypoint.lng },
-            { icon: createMarkerIcon("gray", index + 1) }
-          );
-          waypointMarkers.push(waypointMarker);
-        });
-
-        const originMarker = new H.map.Marker(origin, { icon: originIcon });
-        const destinationMarker = new H.map.Marker(destination, {
-          icon: destinationIcon,
-        });
-        waypointMarkers.push(originMarker, destinationMarker);
-
-        const lineStrings = [];
-        result.routes[0].sections.forEach((section) => {
-          lineStrings.push(
-            H.geo.LineString.fromFlexiblePolyline(section.polyline)
-          );
-        });
-
-        const multiLineString = new H.geo.MultiLineString(lineStrings);
-
-        // Calculate the distance along the polyline
-        let totalDistance = 0;
-        const segmentDistances = [];
-
-        lineStrings.forEach((lineString, segmentIndex) => {
-          let previousPoint = null;
-          let segmentDistance = 0;
-          lineString.eachLatLngAlt((lat, lng, alt, index) => {
-            const currentPoint = new H.geo.Point(lat, lng);
-            if (previousPoint) {
-              const distance = previousPoint.distance(currentPoint);
-              totalDistance += distance;
-              segmentDistance += distance;
-            }
-            previousPoint = currentPoint;
-          });
-          segmentDistances.push(segmentDistance);
-        });
-
-        const data = {
-          totalDistance: totalDistance,
-          segmentDistances: segmentDistances,
-        };
-
-        console.log(data);
-
-        const routeLine = new H.map.Polyline(multiLineString, {
-          style: {
-            strokeColor: "blue",
-            lineWidth: 3,
-          },
-        });
-
-        const group = new H.map.Group();
-        group.addObjects([routeLine, ...waypointMarkers]);
-
-        if (typeof map !== "undefined" && map instanceof H.Map) {
-          map.addObject(group);
-        } else {
-          console.error("Map object is not defined or not an instance of H.Map");
-        }
-
-        resolve(data);
-      };
-
-      const router = platform.getRoutingService(null, 8);
-      router.calculateRoute(routingParameters, onResult, function (error) {
-        console.error(error.message);
-        reject(error.message);
-      });
-    });
-  }
-
   // Initialize the map
   initializeMap();
 
@@ -208,56 +114,58 @@
   // Add the distance measurement tool to the UI
   addDistanceMeasurementTool(ui);
 
-  // Periodically check for new route data from Flask
-  setInterval(() => {
-    // Ensure task_id is correctly retrieved from URL
-    const task_id = new URLSearchParams(window.location.search).get("task_id");
-    if (!task_id) {
-      console.error("Task ID is missing");
-      return; // Avoid making any API requests if task_id is missing
-    }
+  // // Periodically check for new route data from Flask
+  // setInterval(() => {
+  //   // Ensure task_id is correctly retrieved from URL
+  //   const task_id = new URLSearchParams(window.location.search).get("task_id");
+  //   if (!task_id) {
+  //     console.error("Task ID is missing");
+  //     return; // Avoid making any API requests if task_id is missing
+  //   }
 
-    fetch(`http://localhost:5000/get-route-data?task_id=${task_id}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.status !== "no_data") {
-          const { origin, waypoints, destination } = data;
-          console.log("Received route data from Flask:", data);
+  //   fetch(`http://localhost:5000/get-route-data?task_id=${task_id}`)
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       if (data.status !== "no_data") {
+  //         const { origin, waypoints, destination } = data;
+  //         console.log("Received route data from Flask:", data);
 
-          // Validate that origin, waypoints, and destination are defined
-          if (origin && waypoints && destination) {
-            // Calculate the route using multiRouteCal
-            multiRouteCal(waypoints, origin, destination)
-              .then((result) => {
-                // Send the calculated data back to Flask
-                return fetch(`http://localhost:5000/receive-data/${task_id}`, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    total_distance: result.totalDistance,
-                    segment_distances: result.segmentDistances,
-                  }),
-                });
-              })
-              .then((response) => response.json())
-              .then((data) => {
-                console.log("Data successfully sent to Flask:", data);
-              })
-              .catch((error) => {
-                console.error("Error sending data to Flask:", error);
-              });
-          } else {
-            console.error("Origin, waypoints, or destination is missing");
-          }
-        } else {
-          console.error("No data available for the provided task_id");
-        }
-      })
-      .catch((error) =>
-        console.error("Error fetching route data from Flask:", error)
-      );
-  }, 1000);
+  //         // Validate that origin, waypoints, and destination are defined
+  //         if (origin && waypoints && destination) {
+  //           // Calculate the route using multiRouteCal
+  //           multiRouteCal(waypoints, origin, destination, task_id)
+  //             .then((result) => {
+  //               // Send the calculated data back to Flask
+  //               return fetch(`http://localhost:5000/receive-data/${task_id}`, {
+  //                 method: "POST",
+  //                 headers: {
+  //                   "Content-Type": "application/json",
+  //                 },
+  //                 body: JSON.stringify({
+  //                   total_distance: result.totalDistance,
+  //                   segment_distances: result.segmentDistances,
+  //                 }),
+  //               });
+  //             })
+  //             .then((response) => response.json())
+  //             .then((data) => {
+  //               console.log("Data successfully sent to Flask:", data);
+  //             })
+  //             .catch((error) => {
+  //               console.error("Error sending data to Flask:", error);
+  //             });
+  //         } else {
+  //           console.error("Origin, waypoints, or destination is missing");
+  //         }
+  //       } else {
+  //         console.error("No data available for the provided task_id");
+  //       }
+  //     })
+  //     .catch((error) =>
+  //       console.error("Error fetching route data from Flask:", error)
+  //     );
+  // }, 1000);
+
+  getRealTimeTrafficData(1.28668, 103.853607);
 
 })();

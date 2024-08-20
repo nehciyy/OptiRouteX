@@ -7,7 +7,8 @@ const center = {
 const hereCredentials = {
   id: "HERE-580478a9-edc0-4a38-8842-1393f0e46820",
   code: "BYa7o5f155QWUHkSmjWA",
-  apikey: "G1OcoyO4L7xsmvpkua0a1KxPS4FvaqgwBpG_2cyXlXc",
+  apikey: process.env.MAPS_API_KEY,
+  TRAFFIC_API_URL: "https://traffic.ls.hereapi.com/traffic/7.16/flow.json",
 };
 
 export { center, hereCredentials };
