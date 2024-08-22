@@ -17,18 +17,20 @@ export function initializeMap() {
       defaultLayers.vector.normal.map,
       {
         zoom: 12,
-        center: { lat: 1.301114, lng: 103.838872 }, // Default center
+        center: { lat: 1.301114, lng: 103.838872 },
         pixelRatio: window.devicePixelRatio || 1,
       }
     );
 
-    // Enable the event system on the map instance:
     const mapEvents = new H.mapevents.MapEvents(mapInstance);
     behaviorInstance = new H.mapevents.Behavior(mapEvents);
     behaviorInstance.disable(H.mapevents.Behavior.Feature.DBL_TAP_ZOOM);
 
-    // Create the default UI:
     uiInstance = H.ui.UI.createDefault(mapInstance, defaultLayers, "en-US");
+
+    // Add traffic and incident layers
+    mapInstance.addLayer(defaultLayers.vector.traffic);
+    mapInstance.addLayer(defaultLayers.vector.trafficincidents);
 
     window.addEventListener("resize", () => mapInstance.getViewPort().resize());
   }
