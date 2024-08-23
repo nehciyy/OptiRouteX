@@ -19,6 +19,7 @@ OptiRouteX is a program designed to optimize and calculate the shortest possible
 
 - **Dynamic Route Optimization**: Calculates the shortest possible route between the origin, destination, and waypoints using genetic algorithms.
 - **Real-Time Map Rendering**: Visualizes the optimized route on an interactive map interface.
+- **Real-Time Traffic Integration**: Incorporates real-time traffic data into the route optimization process, dynamically adjusting the route to avoid congested areas.
 - **Waypoint Management**: Easily customize and manage waypoints through a JSON configuration file.
 
 ## File Structure and Descriptions
@@ -36,7 +37,6 @@ OptiRouteX is a program designed to optimize and calculate the shortest possible
 - **`index.js`**: The main JavaScript entry point for the frontend, responsible for initializing the map and setting up interactions with other components.
 - **`location.js`**: Manages the retrieval and formatting of location data from the JSON file, making it accessible to other parts of the application.
 - **`mapSingleton.js`**: Implements a singleton pattern for managing the map instance, ensuring that only one instance of the map exists at any time.
-- **`traffic.js`**: Handles the integration of traffic data into the route calculation, allowing for more accurate and dynamic routing decisions.
 
 ### `data` Directory
 

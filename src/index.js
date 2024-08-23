@@ -13,11 +13,10 @@ addDistanceMeasurementTool(ui);
 
 // Periodically check for new route data from Flask
 setInterval(() => {
-  // Ensure task_id is correctly retrieved from URL
   const task_id = new URLSearchParams(window.location.search).get("task_id");
   if (!task_id) {
     console.error("Task ID is missing");
-    return; // Avoid making any API requests if task_id is missing
+    return;
   }
 
   fetch(`http://localhost:5000/get-route-data?task_id=${task_id}`)
@@ -32,7 +31,6 @@ setInterval(() => {
           // Calculate the route using multiRouteCal
           multiRouteCal(waypoints, origin, destination, task_id)
             .then((result) => {
-              // Send the calculated data back to Flask
               return fetch(`http://localhost:5000/receive-data/${task_id}`, {
                 method: "POST",
                 headers: {
@@ -41,6 +39,7 @@ setInterval(() => {
                 body: JSON.stringify({
                   total_distance: result.totalDistance,
                   segment_distances: result.segmentDistances,
+                  red_traffic_count: result.redTrafficCount,
                 }),
               });
             })

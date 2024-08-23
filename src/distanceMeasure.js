@@ -49,7 +49,7 @@ export function multiRouteCal(waypoints, origin, destination, task_id) {
       transportMode: "pedestrian",
       origin: `${origin.lat},${origin.lng}`,
       destination: `${destination.lat},${destination.lng}`,
-      return: "polyline",
+      return: "polyline,summary",
       via: new H.service.Url.MultiValueQueryParameter(
         waypoints.map((wp) => `${wp.lat},${wp.lng}`)
       ),
@@ -89,22 +89,21 @@ export function multiRouteCal(waypoints, origin, destination, task_id) {
       waypointMarkers.push(originMarker, destinationMarker);
 
       const lineStrings = [];
-      result.routes[0].sections.forEach((section) => {
-        lineStrings.push(
-          H.geo.LineString.fromFlexiblePolyline(section.polyline)
-        );
-      });
-
-      const multiLineString = new H.geo.MultiLineString(lineStrings);
-
-      // Calculate the distance along the polyline
       let totalDistance = 0;
       const segmentDistances = [];
+      let redTrafficCount = 0;
 
-      lineStrings.forEach((lineString, segmentIndex) => {
-        let previousPoint = null;
+      result.routes[0].sections.forEach((section, index) => {
+        const lineString = H.geo.LineString.fromFlexiblePolyline(
+          section.polyline
+        );
+        lineStrings.push(lineString);
+
+        // Calculate the distance along the polyline
         let segmentDistance = 0;
-        lineString.eachLatLngAlt((lat, lng, alt, index) => {
+        let previousPoint = null;
+
+        lineString.eachLatLngAlt((lat, lng, alt, idx) => {
           const currentPoint = new H.geo.Point(lat, lng);
           if (previousPoint) {
             const distance = previousPoint.distance(currentPoint);
@@ -113,22 +112,37 @@ export function multiRouteCal(waypoints, origin, destination, task_id) {
           }
           previousPoint = currentPoint;
         });
+
         segmentDistances.push(segmentDistance);
+
+        // Count red traffic conditions
+        if (section.traffic && section.traffic.jamFactor > 7) {
+          redTrafficCount += 1; // Increment the red traffic counter
+          console.log(
+            "Red traffic detected:",
+            section.traffic,
+            section.traffic.jamFactor
+          );
+        }
       });
 
       const data = {
         totalDistance: totalDistance,
         segmentDistances: segmentDistances,
+        redTrafficCount: redTrafficCount, // Return the number of red traffic conditions detected
       };
 
       console.log(data);
 
-      const routeLine = new H.map.Polyline(multiLineString, {
-        style: {
-          strokeColor: "blue",
-          lineWidth: 3,
-        },
-      });
+      const routeLine = new H.map.Polyline(
+        new H.geo.MultiLineString(lineStrings),
+        {
+          style: {
+            strokeColor: "blue",
+            lineWidth: 3,
+          },
+        }
+      );
 
       const group = new H.map.Group();
       group.addObjects([routeLine, ...waypointMarkers]);
