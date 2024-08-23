@@ -1,6 +1,6 @@
 generation,route_taken,total_distance,total_time,locations_at_half_distance
-1,origin -> Gardens by the Bay -> Marina Bay Sands -> Merlion -> Singapore Flyer -> 313 Somerset -> destination,11667.074233106223,"12 minutes, 57 seconds",-3.0
-2,origin -> Gardens by the Bay -> Marina Bay Sands -> Merlion -> Singapore Flyer -> 313 Somerset -> destination,11667.074233106223,"12 minutes, 57 seconds",-3.0
-3,origin -> Gardens by the Bay -> Marina Bay Sands -> Merlion -> Singapore Flyer -> 313 Somerset -> destination,11667.074233106223,"12 minutes, 57 seconds",-3.0
-4,origin -> Gardens by the Bay -> Marina Bay Sands -> Merlion -> Singapore Flyer -> 313 Somerset -> destination,11667.074233106223,"12 minutes, 57 seconds",-3.0
-5,origin -> Gardens by the Bay -> Marina Bay Sands -> Merlion -> Singapore Flyer -> 313 Somerset -> destination,11667.074233106223,"12 minutes, 57 seconds",-3.0
+1,origin -> 313 Somerset -> Merlion -> Singapore Flyer -> Marina Bay Sands -> Gardens by the Bay -> destination,11581.426801740581,"12 minutes, 52 seconds",-2.0
+2,origin -> 313 Somerset -> Merlion -> Singapore Flyer -> Gardens by the Bay -> Marina Bay Sands -> destination,11581.426801738797,"12 minutes, 52 seconds",-2.0
+3,origin -> 313 Somerset -> Merlion -> Singapore Flyer -> Gardens by the Bay -> Marina Bay Sands -> destination,11581.426801738797,"12 minutes, 52 seconds",-2.0
+4,origin -> 313 Somerset -> Merlion -> Singapore Flyer -> Gardens by the Bay -> Marina Bay Sands -> destination,11581.426801738797,"12 minutes, 52 seconds",-2.0
+5,origin -> 313 Somerset -> Merlion -> Singapore Flyer -> Gardens by the Bay -> Marina Bay Sands -> destination,11581.426801738797,"12 minutes, 52 seconds",-2.0
