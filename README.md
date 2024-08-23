@@ -35,7 +35,6 @@ OptiRouteX is a program designed to optimize and calculate the shortest possible
 - **`config.js`**: Contains configuration settings, such as API keys and other constants, required by the JavaScript components of the application.
 - **`distanceMeasure.js`**: Handles the logic for measuring distances between waypoints, origin, and destination. This is a core component that interacts with the genetic algorithm.
 - **`index.js`**: The main JavaScript entry point for the frontend, responsible for initializing the map and setting up interactions with other components.
-- **`location.js`**: Manages the retrieval and formatting of location data from the JSON file, making it accessible to other parts of the application.
 - **`mapSingleton.js`**: Implements a singleton pattern for managing the map instance, ensuring that only one instance of the map exists at any time.
 
 ### `data` Directory
