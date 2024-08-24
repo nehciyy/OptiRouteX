@@ -11,12 +11,12 @@ from selenium.webdriver.chrome.options import Options
 
 # Set the correct path to JSON and CSV files in the data folder outside of the models folder
 script_dir = os.path.dirname(__file__)
-parent_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
+parent_dir = os.path.abspath(os.path.join(script_dir, os.pardir))  # Go one level up from the models folder
 data_folder_path = os.path.join(parent_dir, 'data')
 
 locations_path = os.path.join(script_dir, 'locations.json')
-csv_file_path = os.path.join(data_folder_path, 'generation_results_gen5_test5_traffic.csv')
-best_route_csv_path = os.path.join(data_folder_path, 'best_route_gen5_test5_traffic.csv')
+csv_file_path = os.path.join(data_folder_path, 'generation_results_gen5_test10.csv')
+best_route_csv_path = os.path.join(data_folder_path, 'best_route_gen5_test10.csv')
 
 # Load locations from JSON file
 def load_locations():
@@ -25,17 +25,6 @@ def load_locations():
         locations = json.load(file)
     print("Locations loaded.")
     return locations
-
-# Set up Selenium headless browser with WebGL disabled
-def setup_headless_browser():
-    print("Setting up headless browser...")
-    chrome_options = Options()
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--window-size=1920x1080")
-    browser = webdriver.Chrome(options=chrome_options)
-    print("Headless browser set up complete.")
-    return browser
 
 # Flask URLs
 route_calculation_url = "http://localhost:5000/calculate-route"
@@ -52,10 +41,54 @@ def poll_for_results(task_id):
             if data['status'] == 'complete':
                 print(f"Results received for task ID: {task_id}")
                 return data['total_distance'], data['segment_distances']
-        else:
-            print(f"Error fetching results for task ID: {task_id}, status code: {response.status_code}")
         time.sleep(1)
         print(f"Waiting for task {task_id} to complete...")
+
+# Set up Selenium headless browser with WebGL disabled
+def setup_headless_browser():
+    print("Setting up headless browser...")
+    chrome_options = Options()
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--window-size=1920x1080")
+    browser = webdriver.Chrome(options=chrome_options)
+    print("Headless browser set up complete.")
+    return browser
+
+# Fitness function
+def fitness(individual):
+    global browser_instance
+    print("Starting fitness function...")
+    waypoints = [locations['waypoints'][i] for i in individual]
+    data = {
+        "origin": locations['origin'],
+        "destination": locations['destination'],
+        "waypoints": waypoints
+    }
+    print(f"Sending request to Flask API to calculate route with data: {data}")
+    response = requests.post(route_calculation_url, json=data)
+    if response.status_code == 202:
+        task_id = response.json().get("task_id")
+        url_to_open = f"http://localhost:8000/?task_id={task_id}"
+        print(f"Opening headless browser for task ID: {task_id}")
+        browser_instance.get(url_to_open)
+        total_distance, segment_distances = poll_for_results(task_id)
+        print(f"Fitness function completed for task ID: {task_id}")
+
+        # Calculate how many waypoints were traveled at half the total distance
+        half_distance = total_distance / 2
+        cumulative_distance = 0
+        waypoints_covered_at_half_distance = 0
+        for segment in segment_distances:
+            cumulative_distance += segment
+            if cumulative_distance >= half_distance:
+                break
+            waypoints_covered_at_half_distance += 1
+
+        # Fitness is now a tuple of (total_distance, -waypoints_covered_at_half_distance)
+        return total_distance, -waypoints_covered_at_half_distance
+    else:
+        return float('inf'), 0
 
 # Convert time from seconds to minutes and seconds
 def convert_time(seconds):
@@ -63,33 +96,17 @@ def convert_time(seconds):
     seconds = int(seconds % 60)
     return f"{minutes} minutes, {seconds} seconds"
 
-def calculate_total_time(total_distance, red_traffic_count):
-     # Calculate the total time in minutes
-        # print(f"Red traffic count: {red_traffic_count}")
-
-        total_time = total_distance / 15  # Base time assuming 15 units per minute
-        # Adjust total time if there's any red traffic condition
-        # if red_traffic_count > 0:
-        #     total_traffic_time = red_traffic_count * 1.2  # Calculate total traffic time in minutes
-        # else:
-        #     total_traffic_time = 0
-        
-        # total_time += total_traffic_time  # Add total traffic time to the total time
-
-        total_time = convert_time(total_time)  # Convert total time from minutes to the formatted string
-
-        return total_time
-
 # Store generation results in a list
 def store_generation_results(generation_results, gen, best_waypoint_order, total_distance, waypoints_covered_at_half_distance):
     print(f"Storing results for generation {gen + 1}...")
-    total_time = calculate_total_time(total_distance)
+    total_time_seconds = total_distance / 15
+    total_time_formatted = convert_time(total_time_seconds)
 
     generation_results.append({
         'generation': gen + 1,
         'route_taken': ' -> '.join(['origin'] + best_waypoint_order + ['destination']),
         'total_distance': total_distance,
-        'total_time': total_time,
+        'total_time': total_time_formatted,
         'locations_at_half_distance': waypoints_covered_at_half_distance
     })
 
@@ -118,42 +135,6 @@ def write_results_to_csv(generation_results, best_route, total_distance, total_t
         })
 
     print(f"Results written to {csv_file_path} and {best_route_csv_path}")
-
-def fitness(individual):
-    global browser_instance
-    print("Starting fitness function...")
-    waypoints = [locations['waypoints'][i] for i in individual]
-    
-    data = {
-        "origin": locations['origin'],
-        "destination": locations['destination'],
-        "waypoints": waypoints
-    }
-    print(f"Sending request to Flask API to calculate route with data: {data}")
-
-    response = requests.post(route_calculation_url, json=data)
-    if response.status_code == 202:
-        task_id = response.json().get("task_id")
-        url_to_open = f"http://localhost:8000/?task_id={task_id}"
-        print(f"Opening headless browser for task ID: {task_id}")
-        browser_instance.get(url_to_open)
-        total_distance, segment_distances = poll_for_results(task_id)
-        print(f"Fitness function completed for task ID: {task_id}")
-
-        # Calculate how many waypoints were traveled at half the total distance
-        half_distance = total_distance / 2
-        cumulative_distance = 0
-        waypoints_covered_at_half_distance = 0
-        for segment in segment_distances:
-            cumulative_distance += segment
-            if cumulative_distance >= half_distance:
-                break
-            waypoints_covered_at_half_distance += 1
-
-        # Fitness is now a tuple of (total_distance + total_time_adjustment_minutes, -waypoints_covered_at_half_distance)
-        return total_distance, -waypoints_covered_at_half_distance
-    else:
-        return float('inf'), 0,0
 
 # DEAP setup
 creator.create("FitnessMin", base.Fitness, weights=(-1.0, 1.0))
@@ -239,7 +220,7 @@ if __name__ == "__main__":
         best_waypoint_order = [locations['waypoints'][i]['location'] for i in best_individual]
         best_route = [locations['origin']['location']] + best_waypoint_order + [locations['destination']['location']]
         total_distance, locations_at_half_distance = best_individual.fitness.values
-        total_time = calculate_total_time(total_distance)
+        total_time = convert_time(total_distance / 15)
         print("Best route:", best_route)
         print("Shortest time:", total_time)
         write_results_to_csv(generation_results, best_route, total_distance, total_time, locations_at_half_distance)

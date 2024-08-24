@@ -34,6 +34,56 @@
       "location": "Singapore Flyer",
       "lat": 1.289299,
       "lng": 103.863137
+    },
+    {
+      "location": "Singapore Zoo",
+      "lat": 1.352083,
+      "lng": 103.819836
+    },
+    {
+      "location": "National University of Singapore",
+      "lat": 1.296643,
+      "lng": 103.776394
+    },
+    {
+      "location": "Plaza Singapura",
+      "lat": 1.29991,
+      "lng": 103.859812
+    },
+    {
+      "location": "East Coast Park",
+      "lat": 1.300784,
+      "lng": 103.912187
+    },
+    {
+      "location": "Paya Lebar Square",
+      "lat": 1.31886,
+      "lng": 103.89269
+    },
+    {
+      "location": "Raffles City",
+      "lat": 1.290316,
+      "lng": 103.859466
+    },
+    {
+      "location": "Swissotel The Stamford",
+      "lat": 1.293317,
+      "lng": 103.853399
+    },
+    {
+      "location": "Jewel Changi",
+      "lat": 1.360224,
+      "lng": 103.989675
+    },
+    {
+      "location": "Universal Studios Singapore",
+      "lat": 1.289437,
+      "lng": 103.84998
+    },
+    {
+      "location": "National Museum of Singapore",
+      "lat": 1.29652,
+      "lng": 103.848862
     }
   ]
 }
