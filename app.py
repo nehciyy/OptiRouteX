@@ -40,13 +40,13 @@ def receive_data(task_id):
     data = request.json
     total_distance = data.get('total_distance')
     segment_distances = data.get('segment_distances')
-    red_traffic_count = data.get('red_traffic_count')
+    # red_traffic_count = data.get('red_traffic_count')
 
     tasks[task_id] = {
         "status": "complete",
         "total_distance": total_distance,
         "segment_distances": segment_distances,
-        "red_traffic_count": red_traffic_count,
+        # "red_traffic_count": red_traffic_count,
     }
 
     logging.info(f"Task {task_id} completed with distance: {total_distance}")

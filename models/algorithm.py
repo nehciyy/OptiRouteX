@@ -51,7 +51,7 @@ def poll_for_results(task_id):
             data = response.json()
             if data['status'] == 'complete':
                 print(f"Results received for task ID: {task_id}")
-                return data['total_distance'], data['segment_distances'], data.get('red_traffic_count', 0)
+                return data['total_distance'], data['segment_distances']
         else:
             print(f"Error fetching results for task ID: {task_id}, status code: {response.status_code}")
         time.sleep(1)
@@ -65,25 +65,25 @@ def convert_time(seconds):
 
 def calculate_total_time(total_distance, red_traffic_count):
      # Calculate the total time in minutes
-        print(f"Red traffic count: {red_traffic_count}")
+        # print(f"Red traffic count: {red_traffic_count}")
 
         total_time = total_distance / 15  # Base time assuming 15 units per minute
         # Adjust total time if there's any red traffic condition
-        if red_traffic_count > 0:
-            total_traffic_time = red_traffic_count * 1.2  # Calculate total traffic time in minutes
-        else:
-            total_traffic_time = 0
+        # if red_traffic_count > 0:
+        #     total_traffic_time = red_traffic_count * 1.2  # Calculate total traffic time in minutes
+        # else:
+        #     total_traffic_time = 0
         
-        total_time += total_traffic_time  # Add total traffic time to the total time
+        # total_time += total_traffic_time  # Add total traffic time to the total time
 
         total_time = convert_time(total_time)  # Convert total time from minutes to the formatted string
 
         return total_time
 
 # Store generation results in a list
-def store_generation_results(generation_results, gen, best_waypoint_order, total_distance, waypoints_covered_at_half_distance, red_traffic_count):
+def store_generation_results(generation_results, gen, best_waypoint_order, total_distance, waypoints_covered_at_half_distance):
     print(f"Storing results for generation {gen + 1}...")
-    total_time = calculate_total_time(total_distance, red_traffic_count)
+    total_time = calculate_total_time(total_distance)
 
     generation_results.append({
         'generation': gen + 1,
@@ -137,7 +137,7 @@ def fitness(individual):
         url_to_open = f"http://localhost:8000/?task_id={task_id}"
         print(f"Opening headless browser for task ID: {task_id}")
         browser_instance.get(url_to_open)
-        total_distance, segment_distances, red_traffic_count = poll_for_results(task_id)
+        total_distance, segment_distances = poll_for_results(task_id)
         print(f"Fitness function completed for task ID: {task_id}")
 
         # Calculate how many waypoints were traveled at half the total distance
@@ -151,12 +151,12 @@ def fitness(individual):
             waypoints_covered_at_half_distance += 1
 
         # Fitness is now a tuple of (total_distance + total_time_adjustment_minutes, -waypoints_covered_at_half_distance)
-        return total_distance, -waypoints_covered_at_half_distance, red_traffic_count
+        return total_distance, -waypoints_covered_at_half_distance
     else:
         return float('inf'), 0,0
 
 # DEAP setup
-creator.create("FitnessMin", base.Fitness, weights=(-1.0, 1.0,-1.0))
+creator.create("FitnessMin", base.Fitness, weights=(-1.0, 1.0))
 creator.create("Individual", list, fitness=creator.FitnessMin)
 
 toolbox = base.Toolbox()
@@ -199,10 +199,10 @@ if __name__ == "__main__":
 
             best_individual = tools.selBest(pop, 1)[0]
             best_waypoint_order = [locations['waypoints'][i]['location'] for i in best_individual]
-            total_distance, waypoints_covered_at_half_distance, red_traffic_count = best_individual.fitness.values
+            total_distance, waypoints_covered_at_half_distance = best_individual.fitness.values
 
             # Store the generation results
-            store_generation_results(generation_results, gen, best_waypoint_order, total_distance, waypoints_covered_at_half_distance,red_traffic_count)
+            store_generation_results(generation_results, gen, best_waypoint_order, total_distance, waypoints_covered_at_half_distance)
 
             # Select and evolve the next generation
             offspring = toolbox.select(pop, len(pop))
@@ -238,8 +238,8 @@ if __name__ == "__main__":
         best_individual = hof[0]
         best_waypoint_order = [locations['waypoints'][i]['location'] for i in best_individual]
         best_route = [locations['origin']['location']] + best_waypoint_order + [locations['destination']['location']]
-        total_distance, locations_at_half_distance, red_traffic_count = best_individual.fitness.values
-        total_time = calculate_total_time(total_distance, red_traffic_count)
+        total_distance, locations_at_half_distance = best_individual.fitness.values
+        total_time = calculate_total_time(total_distance)
         print("Best route:", best_route)
         print("Shortest time:", total_time)
         write_results_to_csv(generation_results, best_route, total_distance, total_time, locations_at_half_distance)
