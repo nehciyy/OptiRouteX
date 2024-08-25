@@ -15,8 +15,8 @@ parent_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
 data_folder_path = os.path.join(parent_dir, 'data')
 
 locations_path = os.path.join(script_dir, 'locations.json')
-csv_file_path = os.path.join(data_folder_path, 'generation_results_gen10_test_5_traffic.csv')
-best_route_csv_path = os.path.join(data_folder_path, 'best_route_gen10_test_5_traffic.csv')
+csv_file_path = os.path.join(data_folder_path, 'generation_results_pop10_gen10_test_7_traffic.csv')
+best_route_csv_path = os.path.join(data_folder_path, 'best_route_pop10_gen10_test_7_traffic.csv')
 
 # Load locations from JSON file
 def load_locations():
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
     toolbox.register("select", tools.selTournament, tournsize=3)
 
-    population_size = 5
+    population_size = 10
     crossover_probability = 0.8
     mutation_probability = 0.2
     generations = 10
