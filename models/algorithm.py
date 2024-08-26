@@ -15,8 +15,8 @@ parent_dir = os.path.abspath(os.path.join(script_dir, os.pardir))  # Go one leve
 data_folder_path = os.path.join(parent_dir, 'data')
 
 locations_path = os.path.join(script_dir, 'locations.json')
-csv_file_path = os.path.join(data_folder_path, 'generation_results_gen5_test10.csv')
-best_route_csv_path = os.path.join(data_folder_path, 'best_route_gen5_test10.csv')
+csv_file_path = os.path.join(data_folder_path, 'generation_results_pop10_gen10_test7.csv')
+best_route_csv_path = os.path.join(data_folder_path, 'best_route_pop10_gen10_test_7.csv')
 
 # Load locations from JSON file
 def load_locations():
@@ -154,10 +154,10 @@ if __name__ == "__main__":
     toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
     toolbox.register("select", tools.selTournament, tournsize=3)
 
-    population_size = 5
+    population_size = 10
     crossover_probability = 0.8
     mutation_probability = 0.2
-    generations = 5
+    generations = 10
 
     def main():
         print("Starting main genetic algorithm...")
