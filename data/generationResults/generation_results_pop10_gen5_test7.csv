@@ -1,0 +1,6 @@
+generation,route_taken,total_distance,total_time,locations_at_half_distance
+1,origin -> Singapore Zoo -> National University of Singapore -> Merlion -> Gardens by the Bay -> Singapore Flyer -> 313 Somerset -> Marina Bay Sands -> destination,46260.05633155737,"51 minutes, 24 seconds",-2.0
+2,origin -> Marina Bay Sands -> Merlion -> Gardens by the Bay -> Singapore Zoo -> National University of Singapore -> 313 Somerset -> Singapore Flyer -> destination,43937.301899724065,"48 minutes, 49 seconds",-4.0
+3,origin -> Marina Bay Sands -> Merlion -> Gardens by the Bay -> Singapore Zoo -> National University of Singapore -> 313 Somerset -> Singapore Flyer -> destination,43937.301899724065,"48 minutes, 49 seconds",-4.0
+4,origin -> Gardens by the Bay -> Merlion -> Marina Bay Sands -> Singapore Zoo -> National University of Singapore -> 313 Somerset -> Singapore Flyer -> destination,43937.30189972259,"48 minutes, 49 seconds",-4.0
+5,origin -> Gardens by the Bay -> Merlion -> 313 Somerset -> National University of Singapore -> Singapore Zoo -> Marina Bay Sands -> Singapore Flyer -> destination,42719.353188893714,"47 minutes, 27 seconds",-4.0

@@ -34,16 +34,6 @@
       "location": "Singapore Flyer",
       "lat": 1.289299,
       "lng": 103.863137
-    },
-    {
-      "location": "Singapore Zoo",
-      "lat": 1.352083,
-      "lng": 103.819836
-    },
-    {
-      "location": "National University of Singapore",
-      "lat": 1.296643,
-      "lng": 103.776394
     }
   ]
 }

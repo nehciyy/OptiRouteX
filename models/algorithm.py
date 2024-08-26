@@ -15,8 +15,8 @@ parent_dir = os.path.abspath(os.path.join(script_dir, os.pardir))  # Go one leve
 data_folder_path = os.path.join(parent_dir, 'data')
 
 locations_path = os.path.join(script_dir, 'locations.json')
-csv_file_path = os.path.join(data_folder_path, 'generation_results_pop10_gen10_test7.csv')
-best_route_csv_path = os.path.join(data_folder_path, 'best_route_pop10_gen10_test_7.csv')
+csv_file_path = os.path.join(data_folder_path, 'generation_results_pop10_gen10_test_5.csv')
+best_route_csv_path = os.path.join(data_folder_path, 'best_route_pop10_gen10_test_5.csv')
 
 # Load locations from JSON file
 def load_locations():
