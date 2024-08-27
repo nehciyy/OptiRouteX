@@ -102,31 +102,44 @@ Ensure that the locations are properly set up in the JSON file located at `./mod
 ```json
 {
   "origin": {
+    "location": "Suntec City",
     "lat": 1.292982,
-    "lng": 103.857003,
-    "//": "Suntec City"
+    "lng": 103.857003
   },
   "destination": {
+    "location": "Bugis Junction",
     "lat": 1.300639,
-    "lng": 103.854837,
-    "//": "Bugis Junction"
+    "lng": 103.854837
   },
-  "waypoints": {
-    "Merlion": {
+  "waypoints": [
+    {
+      "location": "Merlion",
       "lat": 1.28668,
       "lng": 103.853607
     },
-    "313 Somerset": {
+    {
+      "location": "313 Somerset",
       "lat": 1.301114,
       "lng": 103.838872
     },
-    "Marina Bay Sands": {
+    {
+      "location": "Marina Bay Sands",
       "lat": 1.28437,
       "lng": 103.8599
     }
-  }
+  ]
 }
 ```
+#### Important Notes:
+
+- **Do Not Change the "origin" and "destination" Keys**: The keys `"origin"` and `"destination"` are required by the program. **Only change the `lat`, `lng`, and `//` values** under these keys to update the coordinates and description.
+
+- **Waypoints Formatting**: For the waypoints, you can customize the name of each waypoint from `location` (e.g., `"Merlion"`, `"313 Somerset"`) and provide the corresponding `lat` and `lng` values. Ensure that each waypoint follows this format.
+
+You can obtain the latitude and longitude coordinates from [findlatitudeandlongitude](https://www.findlatitudeandlongitude.com/) for coordinates.
+
+Here is where you can retrieve the latitude and longitude
+![Find latitude and longitude](images/findCoordinate.png)
 
 ### 3. Running the Program
 
