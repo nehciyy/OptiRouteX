@@ -173,7 +173,7 @@ if __name__ == "__main__":
     toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
     toolbox.register("select", tools.selTournament, tournsize=3)
 
-    population_size = 10
+    population_size = 5
     crossover_probability = 0.8
     mutation_probability = 0.2
     generations = 10

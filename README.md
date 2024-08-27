@@ -35,7 +35,6 @@ OptiRouteX is a program designed to optimize and calculate the shortest possible
 - **`config.js`**: Contains configuration settings, such as API keys and other constants, required by the JavaScript components of the application.
 - **`distanceMeasure.js`**: Handles the logic for measuring distances between waypoints, origin, and destination. This is a core component that interacts with the genetic algorithm.
 - **`index.js`**: The main JavaScript entry point for the frontend, responsible for initializing the map and setting up interactions with other components.
-- **`location.js`**: Manages the retrieval and formatting of location data from the JSON file, making it accessible to other parts of the application.
 - **`mapSingleton.js`**: Implements a singleton pattern for managing the map instance, ensuring that only one instance of the map exists at any time.
 
 ### `data` Directory
@@ -55,9 +54,50 @@ OptiRouteX is a program designed to optimize and calculate the shortest possible
 
 ## Getting Started
 
-### 1. Setting Up the Locations
+### 1. Setting Up the Virtual Environment
 
-Before running the program, ensure that the locations are properly set up in the JSON file located at `./models/locations.json`. The JSON file should follow this structure:
+To ensure that all dependencies are managed properly, it is recommended to use a virtual environment. Follow these steps to set up and activate your virtual environment:
+
+#### Step 1: Create a Virtual Environment
+
+In the root directory of your project, run the following command to create a virtual environment:
+
+```bash
+python -m venv venv
+```
+
+This will create a new directory called `venv` containing the Python interpreter and all the packages installed for this environment.
+
+#### Step 2: Activate the Virtual Environment
+
+Before running your program, you need to activate the virtual environment.
+
+- **On macOS/Linux:**
+
+  ```bash
+  source venv/bin/activate
+  ```
+
+- **On Windows:**
+  ```bash
+  venv\Scripts\activate
+  ```
+
+Your command prompt will change to indicate that the virtual environment is active.
+
+#### Step 3: Install the Required Dependencies
+
+Once the virtual environment is activated, install the necessary dependencies from the `requirements.txt` file:
+
+```bash
+pip install -r requirements.txt
+```
+
+This ensures that all required packages are installed in your virtual environment.
+
+### 2. Setting Up the Locations
+
+Ensure that the locations are properly set up in the JSON file located at `./models/locations.json`. The JSON file should follow this structure:
 
 ```json
 {
@@ -88,48 +128,56 @@ Before running the program, ensure that the locations are properly set up in the
 }
 ```
 
-#### Important Notes:
+### 3. Running the Program
 
-- **Do Not Change the "origin" and "destination" Keys**: The keys `"origin"` and `"destination"` are required by the program. **Only change the `lat`, `lng`, and `//` values** under these keys to update the coordinates and description.
+After setting up the virtual environment and locations, you can run the program by following these steps:
 
-- **Waypoints Formatting**: For the waypoints, you can customize the name of each waypoint as a key (e.g., `"Merlion"`, `"313 Somerset"`) and provide the corresponding `lat` and `lng` values. Ensure that each waypoint follows this format.
+#### Step 1: Start the Backend API (`app.py`)
 
-You can obtain the latitude and longitude coordinates from [findlatitudeandlongitude](https://www.findlatitudeandlongitude.com/) for coordinates.
+In the first terminal (with the virtual environment activated), start the Flask server:
 
-Here is where you can retrieve the latitude and longitude:
-![Find latitude and longitude](images/findCoordinate.png)
+```bash
+python app.py
+```
 
-### 2. Running the Program
+#### Step 2: Bundle JavaScript with Rollup
 
-To start the program, follow these steps by running commands in three consecutive terminals:
+In a second terminal (also with the virtual environment activated), run the following command to bundle your JavaScript files:
 
-- **Step 1:** Open the first terminal and run the command:
+```bash
+npm run bundle
+```
 
-  ```bash
-  python app.py
-  ```
+Subsequently, start a simple HTTP server to serve the frontend:
 
-- **Step 2:** Open a second terminal and, after running `python app.py`, execute the following commands:
+```bash
+python -m http.server 8000
+```
 
-  ```bash
-  npm run bundle
-  python -m http.server 8000
-  ```
+#### Step 3: Run the Genetic Algorithm (`algorithm.py`)
 
-- **Step 3:** Open a third terminal and run the command:
+In a third terminal (with the virtual environment activated), run the genetic algorithm script:
 
-  ```bash
-  python models/algorithm.py
-  ```
+```bash
+python models/algorithm.py
+```
 
-All three terminals need to be running simultaneously as they are interdependent and work together to execute the program.
+Ensure all three terminals are running simultaneously, as they are interdependent.
 
-### 3. Retrieving Results
+### 4. Deactivating the Virtual Environment
 
-After running the program, you can find the following results stored in the data folder:
+When you are done, you can deactivate the virtual environment by running:
 
-- Best Route: The best optimized route calculated by the algorithm.
-- Generation Results: Detailed results for each generation during the route optimization process.
+```bash
+deactivate
+```
+
+### 5. Retrieving Results
+
+After running the program, you can find the following results stored in the `data` folder:
+
+- **Best Route:** The best optimized route calculated by the algorithm.
+- **Generation Results:** Detailed results for each generation during the route optimization process.
 
 ## Notes
 
