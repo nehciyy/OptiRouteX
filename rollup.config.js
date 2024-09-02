@@ -29,6 +29,8 @@ export default {
     replace({
       preventAssignment: true, // Required to avoid issues with Rollup v2
       "process.env.MAPS_API_KEY": JSON.stringify(process.env.MAPS_API_KEY),
+      "process.env.ID": JSON.stringify(process.env.ID),
+      "process.env.CODE": JSON.stringify(process.env.CODE),
     }),
     commonjs(),
     polyfillNode(),
