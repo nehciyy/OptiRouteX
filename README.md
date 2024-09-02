@@ -54,7 +54,18 @@ OptiRouteX is a program designed to optimize and calculate the shortest possible
 
 ## Getting Started
 
-### 1. Setting Up the Virtual Environment
+### 1. Setting Up HERE API Credentials
+
+1. Obtain your HERE API credentials by signing up at [HERE Developer Portal](https://developer.here.com/).
+2. Create a `.env` file in the root directory of the project.
+3. Add the following lines to your `.env` file:
+   ```env
+   MAPS_API_KEY=your-here-apikey
+   CODE=your-here-code
+   ID=your-here-id
+   ```
+
+### 2. Setting Up the Virtual Environment
 
 To ensure that all dependencies are managed properly, it is recommended to use a virtual environment. Follow these steps to set up and activate your virtual environment:
 
@@ -95,7 +106,7 @@ pip install -r requirements.txt
 
 This ensures that all required packages are installed in your virtual environment.
 
-### 2. Setting Up the Locations
+### 3. Setting Up the Locations
 
 Ensure that the locations are properly set up in the JSON file located at `./models/locations.json`. The JSON file should follow this structure:
 
@@ -130,6 +141,7 @@ Ensure that the locations are properly set up in the JSON file located at `./mod
   ]
 }
 ```
+
 #### Important Notes:
 
 - **Do Not Change the "origin" and "destination" Keys**: The keys `"origin"` and `"destination"` are required by the program. **Only change the `lat`, `lng`, and `//` values** under these keys to update the coordinates and description.
@@ -141,7 +153,7 @@ You can obtain the latitude and longitude coordinates from [findlatitudeandlongi
 Here is where you can retrieve the latitude and longitude
 ![Find latitude and longitude](images/findCoordinate.png)
 
-### 3. Running the Program
+### 4. Running the Program
 
 After setting up the virtual environment and locations, you can run the program by following these steps:
 
@@ -177,7 +189,7 @@ python models/algorithm.py
 
 Ensure all three terminals are running simultaneously, as they are interdependent.
 
-### 4. Deactivating the Virtual Environment
+### 5. Deactivating the Virtual Environment
 
 When you are done, you can deactivate the virtual environment by running:
 
@@ -185,7 +197,7 @@ When you are done, you can deactivate the virtual environment by running:
 deactivate
 ```
 
-### 5. Retrieving Results
+### 6. Retrieving Results
 
 After running the program, you can find the following results stored in the `data` folder:
 
