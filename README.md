@@ -211,4 +211,4 @@ After running the program, you can find the following results stored in the `dat
 
 ## References
 
-Codes that form the functionalities of the map were all taken from [HERE Maps API for JavaScript Developer Guide] (https://www.here.com/docs/bundle/maps-api-for-javascript-developer-guide/page/topics/get-started-japan.html)
+Codes that form the functionalities of the map were all taken from [HERE Maps API for JavaScript Developer Guide](https://www.here.com/docs/bundle/maps-api-for-javascript-developer-guide/page/topics/get-started-japan.html)
