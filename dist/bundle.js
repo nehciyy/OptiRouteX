@@ -101,7 +101,7 @@
 
       const routingParameters = {
         routingMode: "fast",
-        transportMode: "pedestrian",
+        transportMode: "car",
         origin: `${origin.lat},${origin.lng}`,
         destination: `${destination.lat},${destination.lng}`,
         return: "polyline,summary",

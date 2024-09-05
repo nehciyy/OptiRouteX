@@ -1,6 +1,6 @@
 import { getMap } from "./mapSingleton.js";
 
-// Create a template for marker icons by using custom SVG style
+// Create a template for marker icons by using custom SVG style (from the HERE Maps API documentation)
 function createMarkerIcon(color) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32">
       <path d="M12 0C6.48 0 2 4.48 2 10c0 5.057 3.333 14.5 10 22 6.667-7.5 10-16.943 10-22 0-5.52-4.48-10-10-10zm0 14c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3z" 
@@ -8,7 +8,7 @@ function createMarkerIcon(color) {
     </svg>`;
 }
 
-// Define the colors for the icons
+// Define the colors for the icons (from the HERE Maps API documentation)
 const startColor = "#00008B";
 const stopoverColor = "#8AC9C9";
 const splitColor = "#A2EDE7";
@@ -20,7 +20,7 @@ const stopoverIcon = new H.map.Icon(createMarkerIcon(stopoverColor));
 const endIcon = new H.map.Icon(createMarkerIcon(endColor));
 const splitIcon = new H.map.Icon(createMarkerIcon(splitColor));
 
-// Create the DistanceMeasurement control
+// Create the DistanceMeasurement control (from the HERE Maps API documentation)
 const distanceMeasurementTool = new H.ui.DistanceMeasurement({
   startIcon: startIcon,
   stopoverIcon: stopoverIcon,
@@ -33,12 +33,13 @@ const distanceMeasurementTool = new H.ui.DistanceMeasurement({
   alignment: H.ui.LayoutAlignment.LEFT_BOTTOM,
 });
 
-// Export the distance measurement tool setup function
+// Export the distance measurement tool setup function (from the HERE Maps API documentation)
 export function addDistanceMeasurementTool(ui) {
   ui.addControl("distancemeasurement", distanceMeasurementTool);
   ui.setUnitSystem(H.ui.UnitSystem.METRIC);
 }
 
+// Export the function to calculate the distance between pairs of points (from the HERE Maps API documentation and modified calculation of the distance)
 export function multiRouteCal(waypoints, origin, destination, task_id) {
   return new Promise((resolve, reject) => {
     const { mapInstance: map, platformInstance: platform } = getMap();
@@ -46,7 +47,7 @@ export function multiRouteCal(waypoints, origin, destination, task_id) {
 
     const routingParameters = {
       routingMode: "fast",
-      transportMode: "pedestrian",
+      transportMode: "car", // by car OR pedestrian
       origin: `${origin.lat},${origin.lng}`,
       destination: `${destination.lat},${destination.lng}`,
       return: "polyline,summary",
@@ -88,6 +89,7 @@ export function multiRouteCal(waypoints, origin, destination, task_id) {
       });
       waypointMarkers.push(originMarker, destinationMarker);
 
+      // All codes below are codes done by me
       const lineStrings = [];
       let totalDistance = 0;
       const segmentDistances = [];

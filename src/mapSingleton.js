@@ -5,6 +5,7 @@ let platformInstance = null;
 let behaviorInstance = null;
 let uiInstance = null;
 
+// Initialize HERE Map
 export function initializeMap() {
   if (!mapInstance) {
     platformInstance = new H.service.Platform({
@@ -38,6 +39,7 @@ export function initializeMap() {
   return { mapInstance, platformInstance, behaviorInstance, uiInstance };
 }
 
+// Get the map instance
 export function getMap() {
   if (!mapInstance) {
     throw new Error(

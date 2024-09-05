@@ -208,3 +208,7 @@ After running the program, you can find the following results stored in the `dat
 
 - Ensure all configurations and settings are correctly set before running the program.
 - Regularly update the `locations.json` file to reflect any changes in your waypoints or geographical data.
+
+## References
+
+Codes that form the functionalities of the map were all taken from [HERE Maps API for JavaScript Developer Guide] (https://www.here.com/docs/bundle/maps-api-for-javascript-developer-guide/page/topics/get-started-japan.html)

@@ -1,3 +1,5 @@
+// This file contains the configuration for the HERE Maps API (done by me)
+
 const center = {
   lat: 1.3521,
   lng: 103.8198,

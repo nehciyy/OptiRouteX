@@ -46,12 +46,12 @@ def poll_for_results(task_id):
     print(f"Polling for results for task ID: {task_id}...")
     url = results_url_template.format(task_id)
     while True:
-        response = requests.get(url)
+        response = requests.get(url) # Send a GET request to retrieve calculated route results
         if response.status_code == 200:
-            data = response.json()
+            data = response.json() # Get the JSON data from the response
             if data['status'] == 'complete':
                 print(f"Results received for task ID: {task_id}")
-                return data['total_distance'], data['segment_distances'], data.get('red_traffic_count', 0)
+                return data['total_distance'], data['segment_distances'], data.get('red_traffic_count', 0) # Return the total distance, segment distances and red traffic count
         else:
             print(f"Error fetching results for task ID: {task_id}, status code: {response.status_code}")
         time.sleep(1)
@@ -131,13 +131,14 @@ def fitness(individual):
     }
     print(f"Sending request to Flask API to calculate route with data: {data}")
 
+    # Send the request to generate task_id with location data 
     response = requests.post(route_calculation_url, json=data)
     if response.status_code == 202:
-        task_id = response.json().get("task_id")
-        url_to_open = f"http://localhost:8000/?task_id={task_id}"
+        task_id = response.json().get("task_id") # Get the task_id from the response
+        url_to_open = f"http://localhost:8000/?task_id={task_id}" # URL to open in the headless browser
         print(f"Opening headless browser for task ID: {task_id}")
         browser_instance.get(url_to_open)
-        total_distance, segment_distances, red_traffic_count = poll_for_results(task_id)
+        total_distance, segment_distances, red_traffic_count = poll_for_results(task_id) # Poll for results
         print(f"Fitness function completed for task ID: {task_id}")
 
         # Calculate how many waypoints were traveled at half the total distance
@@ -165,6 +166,7 @@ if __name__ == "__main__":
     print("Starting the script...")
     locations = load_locations()  # Load locations here before using it
 
+    # Genetic algorithm setup
     toolbox.register("indices", random.sample, range(len(locations['waypoints'])), len(locations['waypoints']))
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.indices)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
@@ -173,6 +175,7 @@ if __name__ == "__main__":
     toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
     toolbox.register("select", tools.selTournament, tournsize=3)
 
+    # Algorithm parameters
     population_size = 5
     crossover_probability = 0.8
     mutation_probability = 0.2
@@ -189,6 +192,7 @@ if __name__ == "__main__":
 
         generation_results = []  # List to store results for all generations
 
+        # Start the genetic algorithm
         for gen in range(generations):
             print(f"Generation {gen + 1}/{generations} started.")
 
@@ -197,6 +201,7 @@ if __name__ == "__main__":
             for ind, fit in zip(pop, fitnesses):
                 ind.fitness.values = fit
 
+            # Get the best individual
             best_individual = tools.selBest(pop, 1)[0]
             best_waypoint_order = [locations['waypoints'][i]['location'] for i in best_individual]
             total_distance, waypoints_covered_at_half_distance, red_traffic_count = best_individual.fitness.values
@@ -208,22 +213,26 @@ if __name__ == "__main__":
             offspring = toolbox.select(pop, len(pop))
             offspring = list(map(toolbox.clone, offspring))
 
+            #Crossover
             for child1, child2 in zip(offspring[::2], offspring[1::2]):
                 if random.random() < crossover_probability:
                     toolbox.mate(child1, child2)
                     del child1.fitness.values
                     del child2.fitness.values
 
+            #Mutation
             for mutant in offspring:
                 if random.random() < mutation_probability:
                     toolbox.mutate(mutant)
                     del mutant.fitness.values
-
+            
+            # Evaluate the individuals with an invalid fitness
             invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
             fitnesses = map(toolbox.evaluate, invalid_ind)
             for ind, fit in zip(invalid_ind, fitnesses):
                 ind.fitness.values = fit
 
+            # Replace the old population by the offspring
             pop[:] = offspring
             record = stats.compile(pop)
             print(f"Statistics for generation {gen + 1}: {record}")
@@ -232,16 +241,23 @@ if __name__ == "__main__":
         print("Main genetic algorithm completed.")
         return pop, hof, generation_results
 
+    # Open the headless browser
     browser_instance = setup_headless_browser()
+
     try:
         pop, hof, generation_results = main()
+        # Get the best individual from the Hall of Fame
         best_individual = hof[0]
+        # Get the best route from the best individual
         best_waypoint_order = [locations['waypoints'][i]['location'] for i in best_individual]
+        # Get the best route with origin and destination
         best_route = [locations['origin']['location']] + best_waypoint_order + [locations['destination']['location']]
         total_distance, locations_at_half_distance, red_traffic_count = best_individual.fitness.values
         total_time = calculate_total_time(total_distance, red_traffic_count)
         print("Best route:", best_route)
         print("Shortest time:", total_time)
+
+        # Write all results to CSV files
         write_results_to_csv(generation_results, best_route, total_distance, total_time, locations_at_half_distance)
     finally:
         browser_instance.quit()
